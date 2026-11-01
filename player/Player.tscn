@@ -1,0 +1,67 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://core/movement_controller.gd" id="1_move"]
+[ext_resource type="Script" path="res://combat/targeting/targeting_controller.gd" id="2_target"]
+[ext_resource type="Script" path="res://player/controllers/player_controller.gd" id="3_pc"]
+[ext_resource type="Script" path="res://items/weapons/weapon_data.gd" id="4_wd"]
+[ext_resource type="Resource" path="res://data/weapons/melee_test.tres" id="5_melee"]
+[ext_resource type="Resource" path="res://data/weapons/rifle_test.tres" id="6_rifle"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_body"]
+albedo_color = Color(0.35, 0.4, 0.45, 1)
+metallic = 0.6
+roughness = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_visor"]
+size = Vector3(0.5, 0.15, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="Mat_visor"]
+albedo_color = Color(0.18, 0.83, 0.78, 1)
+emission_enabled = true
+emission = Color(0.18, 0.83, 0.78, 1)
+emission_energy_multiplier = 2.5
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_body")
+surface_material_override/0 = SubResource("Mat_body")
+
+[node name="Visor" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, -0.35)
+mesh = SubResource("BoxMesh_visor")
+surface_material_override/0 = SubResource("Mat_visor")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.4
+target_desired_distance = 0.3
+radius = 0.4
+height = 1.8
+
+[node name="MovementController" type="Node" parent="." node_paths=PackedStringArray("agent")]
+script = ExtResource("1_move")
+agent = NodePath("../NavigationAgent3D")
+
+[node name="TargetingController" type="Node" parent="."]
+script = ExtResource("2_target")
+
+[node name="PlayerController" type="Node" parent="." node_paths=PackedStringArray("targeting", "movement")]
+script = ExtResource("3_pc")
+targeting = NodePath("../TargetingController")
+movement = NodePath("../MovementController")
+weapons = Array[ExtResource("4_wd")]([ExtResource("5_melee"), ExtResource("6_rifle")])

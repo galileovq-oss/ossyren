@@ -1,7 +1,9 @@
 class_name CameraRig
 extends Node3D
 ## Rig de camara isometrica ortografica. Sigue a `target` con suavizado.
-## Todos los valores son editables desde el Inspector (provisionales, a validar en Fase 1).
+## Se mueve en _physics_process para sincronizarse con el jugador y funcionar bien con
+## la interpolacion de fisica (Project Settings > Physics > Common > Physics Interpolation).
+## Valores provisionales, editables desde el Inspector.
 
 @export var target: Node3D
 @export_range(0.0, 360.0, 1.0) var yaw_degrees: float = 45.0
@@ -22,9 +24,10 @@ func _ready() -> void:
 	rotation_degrees = Vector3(pitch_degrees, yaw_degrees, 0.0)
 	if target:
 		global_position = target.global_position
+	reset_physics_interpolation()
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if target == null:
 		return
 	var weight: float = 1.0 - exp(-follow_smoothing * delta)
