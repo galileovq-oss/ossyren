@@ -1,0 +1,18 @@
+# Normalizar finales de linea (evita ruido CRLF/LF en Windows)
+* text=auto eol=lf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.glb binary
+*.gltf text
+*.fbx binary
+*.blend binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.pdf binary
+*.ttf binary
+*.otf binary

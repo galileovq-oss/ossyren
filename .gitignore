@@ -1,0 +1,15 @@
+# Godot 4
+.godot/
+*.translation
+# Builds exportadas
+builds/
+export/
+# Credenciales / claves de firma
+*.keystore
+*.jks
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
