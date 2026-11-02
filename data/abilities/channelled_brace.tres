@@ -1,0 +1,18 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"channelled_brace"
+display_name = "Channelled Brace"
+description = "TEST ability: a bigger barrier that needs a 1.5 s cast. Used to validate Cast Speed breakpoints and cast interruption."
+kind = 0
+effect = 1
+cast_time = 1.5
+cooldown = 12.0
+effect_amount = 60.0
+effect_duration = 8.0
+supports_auto = false
+default_mode = 0
+auto_health_threshold = 0.5

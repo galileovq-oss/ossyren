@@ -1,0 +1,19 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://items/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+id = &"blade_test"
+display_name = "Test Blade"
+family = 1
+attack_range = 1.8
+requires_line_of_sight = false
+damage_min = 8.0
+damage_max = 11.0
+armour_penetration = 0.0
+attack_interval = 0.9
+impact_fraction = 0.4
+attack_speed_bonus = 0.0
+speed_thresholds = PackedFloat32Array(0, 25, 60)
+speed_rates = PackedFloat32Array(1, 1.5, 2)

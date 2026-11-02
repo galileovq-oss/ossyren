@@ -2,7 +2,7 @@ extends Label
 ## Debug overlay: name, version, FPS and lines from any node in the group
 ## "debug_info" that implements get_debug_text(). F3 hides it.
 
-const HELP_TEXT: String = "LMB: move/attack | RMB: cancel | 1-4: abilities | F: potion | Space: tactical pause | Q/E: weapon (debug) | K: kill target | G: refill potions | U: upgrade potion | R: restart | F3: hide"
+const HELP_TEXT: String = "LMB move/attack | RMB cancel | 1-4 abilities | F potion | Q/E swap weapon set | Space pause | F3 hide\nDEBUG: K kill target | G/U potions | PgUp/PgDn attack speed | Home/End cast speed | Backspace reset | B/N cycle Set I/II | R restart"
 
 
 func _ready() -> void:

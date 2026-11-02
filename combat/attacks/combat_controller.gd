@@ -1,10 +1,13 @@
 class_name CombatController
 extends Node
 ## Attack cycle of an entity (player or enemy). Auto-attacks `target` while:
-##   - it is valid (exists and is not dead), and
-##   - MovementController is chasing it and `in_range` (weapon range + LoS).
-## Cycle: start -> (impact_delay) -> IMPACT (damage is resolved) -> recovery -> (attack_interval) -> next.
-## If the target/range/order is lost before the impact, the attack is CANCELLED with no damage.
+##   - it is valid (exists and is not dead),
+##   - MovementController is chasing it and `in_range` (weapon range + LoS), and
+##   - nothing has locked combat (weapon swap, casting).
+## Cycle: start -> IMPACT (damage is resolved) -> recovery -> next. The interval comes from the weapon's
+## base interval and the Attack Speed breakpoint reached (see SpeedCalculator); the impact lands at
+## `impact_fraction` of that interval, so animation stays in sync at any speed.
+## If the target/range/order is lost (or combat gets locked) before the impact, the attack is CANCELLED.
 ## It does not pick targets: whoever controls it does (PlayerController / EnemyAI).
 
 signal attack_started(target: Node3D, impact_delay: float)
@@ -17,13 +20,19 @@ const RANGED_THRESHOLD: float = 4.0
 @export var movement: MovementController
 @export var stats: StatsComponent
 @export var weapon: WeaponData
+## Seconds the entity still counts as "in combat" after dealing or receiving an attack.
+@export var combat_linger: float = 4.0
 
 var target: Node3D = null
 var is_attacking: bool = false
 
 var _entity: Node3D
 var _cycle_time: float = 0.0
+var _cycle_interval: float = 1.0
+var _cycle_impact: float = 0.35
 var _impact_done: bool = false
+var _locks: Dictionary = {}
+var _combat_time_left: float = 0.0
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
@@ -38,6 +47,9 @@ func _ready() -> void:
 		if inherited is WeaponData:
 			weapon = inherited
 	_rng.randomize()
+	var own_health: HealthComponent = _entity.get_node_or_null("HealthComponent") as HealthComponent
+	if own_health != null:
+		own_health.attack_received.connect(_on_own_attack_received)
 
 
 func engage(new_target: Node3D) -> void:
@@ -56,7 +68,55 @@ func set_weapon(new_weapon: WeaponData) -> void:
 	weapon = new_weapon
 
 
+## Blocks new attacks (and cancels one still winding up) while any source keeps a lock.
+func set_lock(source: StringName, locked: bool) -> void:
+	if locked:
+		_locks[source] = true
+		if is_attacking and not _impact_done:
+			_cancel_attack()
+	else:
+		_locks.erase(source)
+
+
+func is_locked() -> bool:
+	return not _locks.is_empty()
+
+
+## True while engaged with a target, or shortly after dealing/receiving an attack.
+func is_in_combat() -> bool:
+	return is_instance_valid(target) or _combat_time_left > 0.0
+
+
+func _on_own_attack_received(_result: AttackResult) -> void:
+	_combat_time_left = combat_linger
+
+
+# ---------------------------------------------------------------- speed
+
+func get_attack_speed_bonus() -> float:
+	var bonus: float = stats.get_attack_speed() if stats != null else 0.0
+	if weapon != null:
+		bonus += weapon.attack_speed_bonus
+	return bonus
+
+
+func get_attack_rate() -> float:
+	if weapon == null:
+		return 1.0
+	return SpeedCalculator.rate_for(get_attack_speed_bonus(), weapon.speed_thresholds, weapon.speed_rates)
+
+
+func get_attack_interval() -> float:
+	if weapon == null:
+		return 1.0
+	return SpeedCalculator.interval(weapon.attack_interval, get_attack_rate())
+
+
+# ---------------------------------------------------------------- cycle
+
 func _physics_process(delta: float) -> void:
+	if _combat_time_left > 0.0:
+		_combat_time_left = maxf(0.0, _combat_time_left - delta)
 	if weapon == null or movement == null or stats == null:
 		return
 	if is_attacking:
@@ -64,17 +124,17 @@ func _physics_process(delta: float) -> void:
 		if not _impact_done:
 			if not _can_attack_now():
 				_cancel_attack()
-			elif _cycle_time >= weapon.impact_delay:
+			elif _cycle_time >= _cycle_impact:
 				_impact_done = true
 				_resolve_impact()
-		if is_attacking and _cycle_time >= maxf(weapon.attack_interval, weapon.impact_delay):
+		if is_attacking and _cycle_time >= _cycle_interval:
 			is_attacking = false
 	if not is_attacking and _can_attack_now():
 		_begin_attack()
 
 
 func _can_attack_now() -> bool:
-	if not is_instance_valid(target):
+	if is_locked() or not is_instance_valid(target):
 		return false
 	var health: HealthComponent = target.get_node_or_null("HealthComponent") as HealthComponent
 	if health != null and health.is_dead:
@@ -87,7 +147,9 @@ func _begin_attack() -> void:
 	is_attacking = true
 	_impact_done = false
 	_cycle_time = 0.0
-	attack_started.emit(target, weapon.impact_delay)
+	_cycle_interval = get_attack_interval()
+	_cycle_impact = _cycle_interval * weapon.impact_fraction
+	attack_started.emit(target, _cycle_impact)
 
 
 func _cancel_attack() -> void:
@@ -100,7 +162,7 @@ func _resolve_impact() -> void:
 	var defender_stats: StatsComponent = target.get_node_or_null("StatsComponent") as StatsComponent
 	var defender_health: HealthComponent = target.get_node_or_null("HealthComponent") as HealthComponent
 	if defender_stats == null or defender_health == null:
-		push_warning("Objetivo '%s' sin StatsComponent/HealthComponent." % target.name)
+		push_warning("Target '%s' has no StatsComponent/HealthComponent." % target.name)
 		return
 	var result: AttackResult = DamageCalculator.resolve_attack(
 		stats.get_accuracy(), weapon.damage_min, weapon.damage_max,
@@ -113,5 +175,6 @@ func _resolve_impact() -> void:
 	result.defender_name = defender_stats.get_display_name()
 	result.ranged = weapon.attack_range > RANGED_THRESHOLD
 	defender_health.receive_attack(result)
+	_combat_time_left = combat_linger
 	CombatLog.add(result.describe())
 	attack_impact.emit(result)

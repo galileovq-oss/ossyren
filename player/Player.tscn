@@ -1,10 +1,10 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://core/movement_controller.gd" id="1_move"]
 [ext_resource type="Script" path="res://combat/targeting/targeting_controller.gd" id="2_target"]
 [ext_resource type="Script" path="res://player/controllers/player_controller.gd" id="3_pc"]
 [ext_resource type="Script" path="res://items/weapons/weapon_data.gd" id="4_wd"]
-[ext_resource type="Resource" path="res://data/weapons/melee_test.tres" id="5_melee"]
+[ext_resource type="Resource" path="res://data/weapons/maul_test.tres" id="5_maul"]
 [ext_resource type="Resource" path="res://data/weapons/rifle_test.tres" id="6_rifle"]
 [ext_resource type="Script" path="res://combat/damage/stats_component.gd" id="7_stats"]
 [ext_resource type="Script" path="res://combat/damage/health_component.gd" id="8_health"]
@@ -17,6 +17,9 @@
 [ext_resource type="Script" path="res://combat/attacks/ability_controller.gd" id="15_ac"]
 [ext_resource type="Script" path="res://player/components/consumable_controller.gd" id="16_cc"]
 [ext_resource type="Resource" path="res://data/items/health_potion.tres" id="17_potion"]
+[ext_resource type="Resource" path="res://data/weapons/blade_test.tres" id="18_blade"]
+[ext_resource type="Script" path="res://player/components/equipment_component.gd" id="19_eq"]
+[ext_resource type="Resource" path="res://data/abilities/channelled_brace.tres" id="20_cbrace"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -77,7 +80,7 @@ script = ExtResource("8_health")
 
 [node name="AbilityController" type="Node" parent="."]
 script = ExtResource("15_ac")
-abilities = Array[ExtResource("12_ad")]([ExtResource("13_brace")])
+abilities = Array[ExtResource("12_ad")]([ExtResource("13_brace"), ExtResource("20_cbrace")])
 passives = Array[ExtResource("12_ad")]([ExtResource("14_hardened")])
 
 [node name="ConsumableController" type="Node" parent="."]
@@ -97,8 +100,12 @@ script = ExtResource("9_combat")
 [node name="CombatFeedback" type="Node" parent="."]
 script = ExtResource("10_fb")
 
+[node name="EquipmentComponent" type="Node" parent="."]
+script = ExtResource("19_eq")
+sets = Array[ExtResource("4_wd")]([ExtResource("5_maul"), ExtResource("6_rifle")])
+library = Array[ExtResource("4_wd")]([ExtResource("5_maul"), ExtResource("18_blade"), ExtResource("6_rifle")])
+
 [node name="PlayerController" type="Node" parent="." node_paths=PackedStringArray("targeting", "movement")]
 script = ExtResource("3_pc")
 targeting = NodePath("../TargetingController")
 movement = NodePath("../MovementController")
-weapons = Array[ExtResource("4_wd")]([ExtResource("5_melee"), ExtResource("6_rifle")])

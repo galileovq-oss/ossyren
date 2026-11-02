@@ -14,6 +14,9 @@ enum Mode { MANUAL, AUTO }
 
 @export_group("Active")
 @export var effect: Effect = Effect.NONE
+## Seconds to cast at Cast Speed rate 1.0. 0 = instant (never delayed by Cast Speed).
+@export var cast_time: float = 0.0
+## Cooldown is independent of Cast Speed. It starts when the cast completes.
 @export var cooldown: float = 20.0
 ## BARRIER: damage absorbed.
 @export var effect_amount: float = 40.0

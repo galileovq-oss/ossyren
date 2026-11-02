@@ -7,6 +7,8 @@ const STAT_ACCURACY: StringName = &"accuracy"
 const STAT_EVASION: StringName = &"evasion"
 const STAT_ARMOUR: StringName = &"armour"
 const STAT_DAMAGE_REDUCTION: StringName = &"damage_reduction"
+const STAT_ATTACK_SPEED: StringName = &"attack_speed"
+const STAT_CAST_SPEED: StringName = &"cast_speed"
 
 @export var base: StatBlock
 
@@ -71,6 +73,16 @@ func get_damage_reduction() -> float:
 
 func get_move_speed() -> float:
 	return base.move_speed
+
+
+## Attack Speed bonus in % (additive; gear/talents/passives add here).
+func get_attack_speed() -> float:
+	return _bonus(STAT_ATTACK_SPEED)
+
+
+## Cast Speed bonus in % (additive).
+func get_cast_speed() -> float:
+	return _bonus(STAT_CAST_SPEED)
 
 
 func get_body_radius() -> float:

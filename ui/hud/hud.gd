@@ -9,6 +9,7 @@ var _pc: PlayerController
 var _health: HealthComponent
 var _abilities: AbilityController
 var _consumables: ConsumableController
+var _equipment: EquipmentComponent
 var _targeting: TargetingController
 
 var _hp_label: Label
@@ -21,6 +22,7 @@ var _dim: ColorRect
 var _slot_buttons: Array[Button] = []
 var _mode_buttons: Array[Button] = []
 var _potion_button: Button
+var _weapon_button: Button
 
 
 func _ready() -> void:
@@ -34,6 +36,7 @@ func _ready() -> void:
 	_health = player.get_node("HealthComponent") as HealthComponent
 	_abilities = player.get_node("AbilityController") as AbilityController
 	_consumables = player.get_node("ConsumableController") as ConsumableController
+	_equipment = player.get_node("EquipmentComponent") as EquipmentComponent
 	_targeting = player.get_node("TargetingController") as TargetingController
 	_build()
 
@@ -76,6 +79,14 @@ func _build() -> void:
 	var bar: HBoxContainer = HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 8)
 	_place(bar, 0.5, 1.0, 0.0, -16.0, Control.GROW_DIRECTION_BOTH, Control.GROW_DIRECTION_BEGIN)
+	_weapon_button = _make_button(Vector2(150, 64))
+	_weapon_button.pressed.connect(_pc.request_action.bind(PlayerController.SWAP_TOKEN))
+	var weapon_col: VBoxContainer = VBoxContainer.new()
+	weapon_col.add_child(_weapon_button)
+	var weapon_spacer: Control = Control.new()
+	weapon_spacer.custom_minimum_size = Vector2(0, 22)
+	weapon_col.add_child(weapon_spacer)
+	bar.add_child(weapon_col)
 	_potion_button = _make_button(Vector2(104, 64))
 	_potion_button.pressed.connect(_pc.request_action.bind(PlayerController.POTION_TOKEN))
 	var potion_col: VBoxContainer = VBoxContainer.new()
@@ -186,6 +197,20 @@ func _refresh_target() -> void:
 
 
 func _refresh_slots() -> void:
+	# Weapon sets
+	var active_weapon: WeaponData = _equipment.get_active_weapon()
+	var other_index: int = (_equipment.active_set + 1) % maxi(_equipment.sets.size(), 1)
+	var other_weapon: WeaponData = _equipment.get_set_weapon(other_index)
+	var weapon_state: String = "%s: %s" % [tr("Next"), other_weapon.display_name] if other_weapon != null else ""
+	if _equipment.swapping:
+		weapon_state = "%s %.1fs" % [tr("Swapping"), _equipment.get_swap_left()]
+	elif _equipment.get_cooldown_left() > 0.0:
+		weapon_state = "%s %.1fs" % [tr("Cooldown"), _equipment.get_cooldown_left()]
+	elif _pc.is_queued(PlayerController.SWAP_TOKEN):
+		weapon_state = tr("Queued")
+	_weapon_button.text = "[%s] %s %s\n%s" % [_key_text(&"weapon_set_swap"),
+			tr("Set I") if _equipment.active_set == 0 else tr("Set II"),
+			active_weapon.display_name if active_weapon != null else "-", weapon_state]
 	# Potion
 	var potion: ConsumableData = _consumables.potion
 	if potion != null:
@@ -213,6 +238,8 @@ func _refresh_slots() -> void:
 			continue
 		var cooldown: float = _abilities.get_cooldown_left(i)
 		var state: String = tr("Ready") if cooldown <= 0.0 else "%.1fs" % cooldown
+		if _abilities.casting_slot == i:
+			state = "%s %.1fs" % [tr("Casting"), _abilities.get_cast_left()]
 		if _pc.is_queued("%s%d" % [PlayerController.ABILITY_PREFIX, i]):
 			state = tr("Queued")
 		button.text = "[%s] %s\n%s" % [key, ability.display_name, state]

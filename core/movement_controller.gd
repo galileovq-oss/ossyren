@@ -42,6 +42,8 @@ signal movement_blocked
 var state: State = State.IDLE
 var chase_target: Node3D = null
 var in_range: bool = false
+## While true the entity stands still (e.g. while casting). Orders stay stored.
+var locked: bool = false
 
 var _desired_range: float = 2.0
 var _target_radius: float = 0.5
@@ -96,6 +98,10 @@ func set_chase_params(desired_range: float, requires_los: bool) -> void:
 	_requires_los = requires_los
 
 
+func set_locked(value: bool) -> void:
+	locked = value
+
+
 func stop() -> void:
 	_clear_chase()
 	_blocked_time = 0.0
@@ -121,11 +127,12 @@ func get_edge_distance_to_chase_target() -> float:
 func _physics_process(delta: float) -> void:
 	_face_dir = Vector3.ZERO
 	var move_dir: Vector3 = Vector3.ZERO
-	match state:
-		State.MOVING:
-			move_dir = _step_move()
-		State.CHASING:
-			move_dir = _step_chase(delta)
+	if not locked:
+		match state:
+			State.MOVING:
+				move_dir = _step_move()
+			State.CHASING:
+				move_dir = _step_chase(delta)
 	_desired_dir = move_dir
 	var desired_velocity: Vector3 = move_dir * move_speed
 	if agent.avoidance_enabled:

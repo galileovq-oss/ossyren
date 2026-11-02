@@ -1,19 +1,18 @@
 class_name PlayerController
 extends Node
-## Turns player input into ORDERS (move / attack / cancel / use ability / use potion).
+## Turns player input into ORDERS (move / attack / cancel / swap weapons / use ability / use potion).
 ## It never moves or attacks directly: it delegates to MovementController, CombatController,
-## AbilityController and ConsumableController.
+## EquipmentComponent, AbilityController and ConsumableController.
 ## Runs in PROCESS_MODE_ALWAYS so orders can be given while the game is tactically paused.
 
 signal queue_changed
 
 const POTION_TOKEN: String = "potion"
+const SWAP_TOKEN: String = "swap"
 const ABILITY_PREFIX: String = "ability:"
 
 @export var targeting: TargetingController
 @export var movement: MovementController
-## Provisional: test weapons. In Phase 4 EquipmentComponent replaces this.
-@export var weapons: Array[WeaponData] = []
 
 @export_group("Input")
 ## Holding the button on the ground keeps issuing move orders (Diablo style).
@@ -21,7 +20,7 @@ const ABILITY_PREFIX: String = "ability:"
 @export var hold_repeat_interval: float = 0.12
 ## Decided: clicking the ground deselects the current target (and cancels the attack).
 @export var ground_click_clears_target: bool = true
-## While tactically paused, abilities/potions are queued and fire on resume.
+## While tactically paused, abilities/potions/swaps are queued and fire on resume.
 ## false = they take effect immediately even while paused (free actions).
 @export var queue_actions_while_paused: bool = true
 ## Main enables this once navigation is ready.
@@ -32,7 +31,7 @@ var _health: HealthComponent
 var _stats: StatsComponent
 var _abilities: AbilityController
 var _consumables: ConsumableController
-var _weapon_index: int = 0
+var _equipment: EquipmentComponent
 var _primary_down: bool = false
 var _primary_just_pressed: bool = false
 var _hold_move_active: bool = false
@@ -50,17 +49,17 @@ func _ready() -> void:
 	_stats = entity.get_node("StatsComponent") as StatsComponent
 	_abilities = entity.get_node("AbilityController") as AbilityController
 	_consumables = entity.get_node("ConsumableController") as ConsumableController
-	if weapons.is_empty():
-		push_warning("PlayerController: no weapons assigned; using default WeaponData.")
-		weapons.append(WeaponData.new())
-	_combat.set_weapon(get_current_weapon())
+	_equipment = entity.get_node("EquipmentComponent") as EquipmentComponent
+	_combat.set_weapon(_equipment.get_active_weapon())
 	movement.set_move_speed(_stats.get_move_speed())
 	targeting.target_lost.connect(_on_target_lost)
 	_health.died.connect(_on_player_died)
+	_equipment.swap_started.connect(_on_swap_started)
+	_equipment.weapon_changed.connect(_on_weapon_changed)
 
 
 func get_current_weapon() -> WeaponData:
-	return weapons[_weapon_index]
+	return _equipment.get_active_weapon()
 
 
 # ---------------------------------------------------------------- input
@@ -74,7 +73,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("click_secondary"):
 		_cancel_orders()
 	elif event.is_action_pressed("weapon_set_swap"):
-		_debug_cycle_weapon()
+		request_action(SWAP_TOKEN)
 	elif InputMap.has_action(&"use_potion") and event.is_action_pressed("use_potion"):
 		request_action(POTION_TOKEN)
 	else:
@@ -124,6 +123,7 @@ func _handle_primary(initial: bool) -> void:
 # ---------------------------------------------------------------- orders
 
 func _order_move(point: Vector3, show_marker: bool) -> void:
+	_abilities.cancel_cast()
 	_combat.disengage()
 	movement.move_to(point)
 	if ground_click_clears_target:
@@ -133,6 +133,7 @@ func _order_move(point: Vector3, show_marker: bool) -> void:
 
 
 func _order_attack(target: Targetable) -> void:
+	_abilities.cancel_cast()
 	targeting.select(target)
 	var weapon: WeaponData = get_current_weapon()
 	_combat.set_weapon(weapon)
@@ -140,15 +141,16 @@ func _order_attack(target: Targetable) -> void:
 	movement.chase(target.entity, weapon.attack_range, target.target_radius, weapon.requires_line_of_sight)
 
 
-## Provisional: right click cancels the order, the target and any queued actions.
+## Provisional: right click cancels the order, the target, a cast and any queued actions.
 func _cancel_orders() -> void:
+	_abilities.cancel_cast()
 	_combat.disengage()
 	movement.stop()
 	targeting.clear_target()
 	clear_queue()
 
 
-## Public: used by key presses and HUD buttons. `token` is "potion" or "ability:<slot>".
+## Public: used by key presses and HUD buttons. `token` is "potion", "swap" or "ability:<slot>".
 func request_action(token: String) -> void:
 	if _health.is_dead:
 		return
@@ -181,6 +183,8 @@ func _flush_queue() -> void:
 func _is_action_ready(token: String) -> bool:
 	if token == POTION_TOKEN:
 		return _consumables.can_use()
+	if token == SWAP_TOKEN:
+		return _equipment.can_swap()
 	if token.begins_with(ABILITY_PREFIX):
 		return _abilities.can_activate(int(token.trim_prefix(ABILITY_PREFIX)))
 	return false
@@ -189,11 +193,26 @@ func _is_action_ready(token: String) -> bool:
 func _execute(token: String) -> void:
 	if token == POTION_TOKEN:
 		_consumables.use()
+	elif token == SWAP_TOKEN:
+		_equipment.request_swap()
 	elif token.begins_with(ABILITY_PREFIX):
 		_abilities.activate(int(token.trim_prefix(ABILITY_PREFIX)))
 
 
 # ---------------------------------------------------------------- events
+
+func _on_swap_started(_to_index: int, _duration: float) -> void:
+	# While swapping no attack can start; a wind-up in progress is cancelled.
+	_combat.set_lock(&"swap", true)
+
+
+func _on_weapon_changed(weapon: WeaponData, _set_index: int) -> void:
+	_combat.set_weapon(weapon)
+	_combat.set_lock(&"swap", false)
+	# Automatic behaviour continues with the new weapon: re-evaluate range / line of sight.
+	if movement.state == MovementController.State.CHASING:
+		movement.set_chase_params(weapon.attack_range, weapon.requires_line_of_sight)
+
 
 func _on_target_lost(target: Targetable) -> void:
 	# The target died: stop. Do NOT acquire another one automatically.
@@ -213,15 +232,6 @@ func _on_player_died(_result: AttackResult) -> void:
 	CombatLog.add("%s has fallen. Press R to restart." % _stats.get_display_name())
 
 
-## DEBUG (Phase 1/2): cycles weapons to test ranges. Phase 4 replaces it with real weapon sets.
-func _debug_cycle_weapon() -> void:
-	_weapon_index = (_weapon_index + 1) % weapons.size()
-	var weapon: WeaponData = get_current_weapon()
-	_combat.set_weapon(weapon)
-	if movement.state == MovementController.State.CHASING:
-		movement.set_chase_params(weapon.attack_range, weapon.requires_line_of_sight)
-
-
 func get_debug_text() -> String:
 	var weapon: WeaponData = get_current_weapon()
 	var target_text: String = "-"
@@ -232,12 +242,23 @@ func get_debug_text() -> String:
 		if t_health != null:
 			target_text += " %d/%d" % [t_health.current_health, t_health.max_health]
 	var dist: float = movement.get_edge_distance_to_chase_target()
-	var text: String = "HP: %d/%d | Weapon [Q/E]: %s (range %.1f m, %.0f-%.0f dmg, LoS: %s)\nState: %s | In range: %s | Attacking: %s\nTarget: %s | Edge dist: %s" % [
+	var as_bonus: float = _combat.get_attack_speed_bonus()
+	var next_bp: float = SpeedCalculator.next_threshold(as_bonus, weapon.speed_thresholds, weapon.speed_rates)
+	var cs_bonus: float = _abilities.get_cast_speed_bonus()
+	var cs_next: float = SpeedCalculator.next_threshold(cs_bonus, SpeedCalculator.cast_thresholds(), SpeedCalculator.cast_rates())
+	var text: String = "HP: %d/%d | Set %s: %s (%s, range %.1f m, %.0f-%.0f dmg, LoS: %s)%s\n" % [
 		_health.current_health, _health.max_health,
-		weapon.display_name, weapon.attack_range, weapon.damage_min, weapon.damage_max,
-		str(weapon.requires_line_of_sight),
+		"I" if _equipment.active_set == 0 else "II", weapon.display_name,
+		WeaponData.Family.keys()[weapon.family], weapon.attack_range, weapon.damage_min, weapon.damage_max,
+		str(weapon.requires_line_of_sight), "  [SWAPPING]" if _equipment.swapping else ""]
+	text += "AS +%.0f%% -> %s | interval %.2fs (base %.2fs) | next breakpoint: %s\n" % [
+		as_bonus, SpeedCalculator.rate_label(_combat.get_attack_rate()), _combat.get_attack_interval(),
+		weapon.attack_interval, ("+%.0f%%" % next_bp) if next_bp >= 0.0 else "cap"]
+	text += "CS +%.0f%% -> %s | next breakpoint: %s\n" % [
+		cs_bonus, SpeedCalculator.rate_label(_abilities.get_cast_rate()), ("+%.0f%%" % cs_next) if cs_next >= 0.0 else "cap"]
+	text += "State: %s | In range: %s | Attacking: %s | Casting: %s\nTarget: %s | Edge dist: %s" % [
 		MovementController.State.keys()[movement.state], str(movement.in_range), str(_combat.is_attacking),
-		target_text, ("%.1f m" % dist) if dist >= 0.0 else "-"]
+		str(_abilities.is_casting()), target_text, ("%.1f m" % dist) if dist >= 0.0 else "-"]
 	if not _queue.is_empty():
 		text += "\nQueued: " + ", ".join(_queue)
 	return text

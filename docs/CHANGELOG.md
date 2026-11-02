@@ -1,5 +1,19 @@
 # Changelog / registro de decisiones
 
+## 2026-11-02 — Decisiones de Fase 4
+- Casteo: el personaje se queda quieto y cualquier orden lo interrumpe (confirmado).
+- Cambio de set de armas: cooldown de 1,5 s **solo si ocurre en combate** (`EquipmentComponent.combat_swap_cooldown`; "en combate" = objetivo engranado o hasta 4 s tras dar/recibir un ataque, `CombatController.combat_linger`).
+- Techo de bonos de velocidad de movimiento: se decide en la Fase 7 con el sistema de equipo.
+
+## 2026-11-02 — Fase 4
+- `SpeedCalculator` (funciones puras con pruebas): breakpoints de AS por arma y de CS globales; tasas 1/1, 3/2, 2/1; techo por tipo de arma.
+- `WeaponData` ampliado: familia, `attack_interval`, `impact_fraction` (sustituye a `impact_delay`), `attack_speed_bonus`, umbrales y tasas. Tres familias de prueba: Maul (melee pesada, techo 3/2), Blade (melee rápida) y Rifle.
+- `EquipmentComponent`: dos sets, cambio sin pausar con 0,4 s de demora; el cambio bloquea ataques y reevalúa rango/LoS al terminar.
+- `CombatController`: bloqueos por fuente (`swap`, `cast`) y cadencia derivada de AS.
+- `AbilityController`: cast time con CS, el lanzamiento inmoviliza y bloquea ataques; cualquier orden interrumpe. Habilidad de prueba Channelled Brace.
+- `StatsComponent`: `attack_speed` y `cast_speed`. Herramientas debug para AS/CS y para cambiar armas de los sets.
+- Todo el ritmo base sigue al 85 % (decisión anterior); los techos de movimiento quedan pendientes.
+
 ## 2026-11-02 — Ajustes de Fase 3 (decisiones)
 - Acciones en pausa: se encolan y se ejecutan al reanudar (confirmado).
 - Idioma de trabajo: **inglés en código y comentarios**; **español en commits y documentos de trabajo**. Todos los comentarios existentes pasaron a inglés.
