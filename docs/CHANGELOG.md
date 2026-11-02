@@ -1,5 +1,21 @@
 # Changelog / registro de decisiones
 
+## 2026-11-02 — Ajustes de Fase 3 (decisiones)
+- Acciones en pausa: se encolan y se ejecutan al reanudar (confirmado).
+- Idioma de trabajo: **inglés en código y comentarios**; **español en commits y documentos de trabajo**. Todos los comentarios existentes pasaron a inglés.
+- Modelo de pociones: máx. 5 cargas; se recuperan con drops de enemigos/cofres (autopickup) y en el hub; la poción mejora tipo Estus (sin tiers) con recurso o sidequest recurrente.
+- Implementado: `ConsumableController` con `add_charges`, `refill`, `upgrade` y `get_heal_amount`; `PotionPickup` (autopickup); `EnemyBase.potion_drop_chance`. Teclas debug G (recarga) y U (mejora).
+
+## 2026-11-02 — Fase 3 (+ idioma)
+- **Idioma:** inglés británico como base del proyecto (texto, UI, datos, identificadores propios). `armor` -> `armour` en todo el código y datos; `StyleGuide.md` creado. Setting probable: Inglaterra (homenaje a Hellgate).
+- Pausa táctica (`TacticalPause`, `SceneTree.paused`): HUD, targeting y `PlayerController` siguen activos (`PROCESS_MODE_ALWAYS`). Órdenes de movimiento/ataque dadas en pausa se ejecutan al reanudar.
+- Habilidades y pasivas: `AbilityData` / `AbilityController` (4 ranuras activas, cooldown, modo Auto/Manual con regla de salud). Primera defensa activa: **Brace** (barrera). Pasiva: **Hardened** (+10 % DR).
+- `StatsComponent` con modificadores aditivos por fuente; `HealthComponent` con barrera y curación.
+- Consumibles: `ConsumableController` (poción manual, 3 cargas, enfriamiento 8 s; nunca automática).
+- Acciones pedidas en pausa: se **encolan** y se ejecutan al reanudar (`queue_actions_while_paused`, por defecto true; pendiente de confirmar).
+- HUD mínimo táctico en código (`ui/hud/hud.gd`): vida, barra de acciones, objetivo, banner de pausa.
+- `use_potion` (F) registrada vía `InputSetup`.
+
 ## 2026-11-02 — Ajuste de ritmo base (nivel 1)
 - Decidido: ritmo base **15 % más lento** para que el juego no sea frenético en niveles altos.
 - Movimiento ×0,85: jugador 6,0 -> 5,1 m/s; grunt 4,5 -> 3,8 m/s.

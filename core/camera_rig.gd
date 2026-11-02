@@ -1,9 +1,9 @@
 class_name CameraRig
 extends Node3D
-## Rig de camara isometrica ortografica. Sigue a `target` con suavizado.
-## Se mueve en _physics_process para sincronizarse con el jugador y funcionar bien con
-## la interpolacion de fisica (Project Settings > Physics > Common > Physics Interpolation).
-## Valores provisionales, editables desde el Inspector.
+## Orthographic isometric camera rig. Follows `target` with smoothing.
+## Moves in _physics_process to stay in sync with the player and work well with
+## physics interpolation (Project Settings > Physics > Common > Physics Interpolation).
+## Provisional values, editable from the Inspector.
 
 @export var target: Node3D
 @export_range(0.0, 360.0, 1.0) var yaw_degrees: float = 45.0

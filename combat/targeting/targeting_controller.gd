@@ -1,7 +1,7 @@
 class_name TargetingController
 extends Node
-## Resuelve "que hay bajo el cursor" (raycast desde la camara), mantiene el hover
-## y el objetivo actual. NO mueve ni ataca: solo informa por señales.
+## Resolves "what is under the cursor" (raycast from the camera), keeps the hover
+## and the current target. It does NOT move or attack: it only reports through signals.
 
 enum PickKind { NONE, GROUND, TARGET }
 
@@ -11,13 +11,17 @@ class PickResult:
 	var targetable: Targetable = null
 
 signal target_changed(new_target: Targetable, old_target: Targetable)
-## Se emite justo antes de limpiar el objetivo cuando este muere/desaparece.
+## Emitted just before the target is cleared when it dies/disappears.
 signal target_lost(target: Targetable)
 
 @export var ray_length: float = 200.0
 
 var current_target: Targetable = null
 var hovered: Targetable = null
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS  # hover/picking must work during the tactical pause
 
 
 func _physics_process(_delta: float) -> void:

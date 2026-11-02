@@ -1,6 +1,6 @@
 class_name DebugTools
 extends Node
-## Atajos SOLO para builds de depuracion. K: "matar" objetivo actual. R: reiniciar escena.
+## Debug-only shortcuts. K: kill the current target. R: restart the scene. G: refill potion charges (hub). U: upgrade the potion.
 
 @export var targeting: TargetingController
 
@@ -8,6 +8,8 @@ extends Node
 func _ready() -> void:
 	if not OS.is_debug_build():
 		queue_free()
+		return
+	process_mode = Node.PROCESS_MODE_ALWAYS  # K / R must also work during the tactical pause
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -20,5 +22,19 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				var health: HealthComponent = targeting.current_target.entity.get_node_or_null("HealthComponent") as HealthComponent
 				if health != null:
 					health.kill()
+		KEY_G:
+			var consumables: ConsumableController = _get_consumables()
+			if consumables != null:
+				consumables.refill()
+		KEY_U:
+			var consumables_up: ConsumableController = _get_consumables()
+			if consumables_up != null:
+				consumables_up.upgrade()
 		KEY_R:
+			get_tree().paused = false
 			get_tree().reload_current_scene()
+
+
+func _get_consumables() -> ConsumableController:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	return player.get_node_or_null("ConsumableController") as ConsumableController if player != null else null

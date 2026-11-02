@@ -1,6 +1,6 @@
 class_name GroundMarker
 extends MeshInstance3D
-## Anillo efimero que marca el destino de una orden de movimiento.
+## Short-lived ring that marks the destination of a move order.
 
 
 static func spawn(parent: Node, world_pos: Vector3, color: Color = Color(0.18, 0.83, 0.78, 0.9)) -> void:
@@ -25,6 +25,7 @@ func _play(color: Color) -> void:
 
 	scale = Vector3(1.5, 0.3, 1.5)
 	var tween: Tween = create_tween().set_parallel(true)
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(self, "scale", Vector3(0.5, 0.3, 0.5), 0.45)
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.45)
 	tween.chain().tween_callback(queue_free)

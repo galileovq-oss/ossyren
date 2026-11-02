@@ -1,9 +1,9 @@
 class_name MovementController
 extends Node
-## Movimiento por navegacion reutilizable (jugador ahora, enemigos despues).
-## Solo EJECUTA la orden actual (move_to / chase / stop) y avisa por señales.
-## No decide que hacer ni ataca: eso es responsabilidad de otros sistemas.
-## Valores provisionales, editables desde el Inspector.
+## Reusable navigation movement (player now, enemies later).
+## It only EXECUTES the current order (move_to / chase / stop) and reports through signals.
+## It neither decides what to do nor attacks: that is up to other systems.
+## Provisional values, editable from the Inspector.
 
 enum State { IDLE, MOVING, CHASING }
 
@@ -15,15 +15,15 @@ signal chase_failed(target: Node3D)
 signal movement_blocked
 
 @export_group("Referencias")
-## Por defecto, el padre. Debe ser un CharacterBody3D.
+## Defaults to the parent. Must be a CharacterBody3D.
 @export var body: CharacterBody3D
-## El NavigationAgent3D debe ser hijo directo del cuerpo (requisito de Godot).
+## The NavigationAgent3D must be a direct child of the body (Godot requirement).
 @export var agent: NavigationAgent3D
 
 @export_group("Movimiento")
 @export var move_speed: float = 6.0
-## Distancia HORIZONTAL (m) al destino para dar la orden por cumplida.
-## No usamos is_navigation_finished() solo: mide en 3D y la malla flota sobre el suelo.
+## HORIZONTAL distance (m) to the destination to consider the order complete.
+## We do not rely on is_navigation_finished() alone: it measures in 3D and the mesh floats above the floor.
 @export var arrive_distance: float = 0.3
 @export var turn_smoothing: float = 14.0
 @export var gravity: float = 24.0
@@ -31,7 +31,7 @@ signal movement_blocked
 @export_group("Persecucion")
 @export var repath_interval: float = 0.2
 @export var repath_min_target_shift: float = 0.35
-## Margen extra antes de considerar que el objetivo salio de rango (evita parpadeo).
+## Extra margin before deciding the target left range (avoids flickering).
 @export var range_hysteresis: float = 0.35
 @export var eye_height: float = 1.2
 
@@ -90,7 +90,7 @@ func chase(target: Node3D, desired_range: float, target_radius: float = 0.0, req
 	_set_state(State.CHASING)
 
 
-## Cambia rango/LoS sin reiniciar la persecucion (p. ej. al cambiar de arma).
+## Changes range/LoS without restarting the chase (e.g. when swapping weapons).
 func set_chase_params(desired_range: float, requires_los: bool) -> void:
 	_desired_range = desired_range
 	_requires_los = requires_los
@@ -129,7 +129,7 @@ func _physics_process(delta: float) -> void:
 	_desired_dir = move_dir
 	var desired_velocity: Vector3 = move_dir * move_speed
 	if agent.avoidance_enabled:
-		# La velocidad segura (evitando a otros agentes) llega en _on_velocity_computed.
+		# The safe velocity (avoiding other agents) arrives in _on_velocity_computed.
 		agent.velocity = desired_velocity
 	else:
 		_move_body(desired_velocity, delta)
@@ -203,7 +203,7 @@ func _move_body(horizontal: Vector3, delta: float) -> void:
 		body.velocity.y -= gravity * delta
 	body.move_and_slide()
 
-	# Deteccion de bloqueo: queremos movernos pero casi no avanzamos.
+	# Block detection: we want to move but are barely advancing.
 	if _desired_dir != Vector3.ZERO:
 		var real: Vector3 = body.get_real_velocity()
 		real.y = 0.0
@@ -222,14 +222,14 @@ func _update_facing(move_dir: Vector3, delta: float) -> void:
 	var look: Vector3 = move_dir if move_dir != Vector3.ZERO else _face_dir
 	look.y = 0.0
 	if look.length_squared() > 0.0001:
-		# Frente del personaje = -Z local.
+		# Character front = local -Z.
 		var yaw: float = atan2(-look.x, -look.z)
 		body.rotation.y = lerp_angle(body.rotation.y, yaw, 1.0 - exp(-turn_smoothing * delta))
 
 
 # ---------------------------------------------------------------- utilidades
 
-## Llegada medida solo en XZ (ignora la altura de la malla de navegacion).
+## Arrival measured on the XZ plane only (ignores the navigation mesh height).
 func _path_finished() -> bool:
 	if agent.is_navigation_finished():
 		return true

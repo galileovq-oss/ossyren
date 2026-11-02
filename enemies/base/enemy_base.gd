@@ -1,12 +1,14 @@
 class_name EnemyBase
 extends CharacterBody3D
-## Raiz de todo enemigo. Los DATOS viven aqui (stats, arma, agresividad) y los componentes
-## hijos los leen; asi una variante = esta misma escena con otros datos, sin duplicar logica.
+## Root of every enemy. The DATA lives here (stats, weapon, aggression) and the child
+## components read it; so a variant = this same scene with other data, no duplicated logic.
 
 @export var stats: StatBlock
 @export var weapon: WeaponData
-## false = maniqui: se deja golpear pero no ataca ni persigue.
+## false = dummy: it can be hit but does not attack or chase.
 @export var aggressive: bool = true
+## Chance to drop a potion charge on death. Placeholder: Phase 7 replaces it with loot tables.
+@export_range(0.0, 1.0) var potion_drop_chance: float = 0.3
 
 @onready var _targetable: Targetable = $Targetable
 @onready var _health: HealthComponent = $HealthComponent
@@ -29,6 +31,8 @@ func _ready() -> void:
 
 func _on_died(_result: AttackResult) -> void:
 	_targetable.invalidate()
+	if randf() < potion_drop_chance:
+		PotionPickup.spawn(get_tree().current_scene, global_position)
 	collision_layer = 0
 	_agent.avoidance_enabled = false
 	_movement.stop()

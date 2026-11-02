@@ -12,7 +12,7 @@ Salida: combate 1 contra 1 y 1 contra varios sin input continuo. Tag: `v0.2-auto
 | Paso | Regla |
 |---|---|
 | Impacto | `clamp(Accuracy / (Accuracy + Evasion), 5%, 95%)` — siempre hay fallo posible |
-| Armadura | efectiva = `max(0, Armor − ArmorPen)`; pasa `1 − ef/(ef+100)` |
+| Armadura | efectiva = `max(0, Armour − ArmourPen)`; pasa `1 − ef/(ef+100)` |
 | DR | pasa `1 − clamp(DR, 0, 75%)`, capa separada tras la armadura |
 | Final | `max(1, round(base × armadura × DR))` |
 
@@ -30,7 +30,7 @@ Variantes de enemigo = `EnemyBase.tscn` con otros datos (`stats`, `weapon`, `agg
 | Nodo | Para qué |
 |---|---|
 | DummyNear | Maniquí normal: tasa de acierto ~91% con melee |
-| DummyArmored | Armadura 100: el daño base se reduce a la mitad; el rifle (pen 15) pierde menos |
+| DummyArmoured | Armadura 100: el daño base se reduce a la mitad; el rifle (pen 15) pierde menos |
 | DummyEvasive | Evasión 100: acierto ~50% |
 | DummyBehindWall | Probar LoS del rifle |
 | GruntSolo | Combate 1 contra 1 (aggro a 9 m o si le disparas) |
@@ -40,7 +40,7 @@ Variantes de enemigo = `EnemyBase.tscn` con otros datos (`stats`, `weapon`, `agg
 - [ ] Pruebas de fórmulas: `godot --headless -s res://tests/test_damage_calculator.gd` (todas PASS).
 - [ ] Click en maniquí: se acerca, ataca solo y aparecen números/“Fallo”. Log en el overlay.
 - [ ] Hay fallos ocasionales incluso contra el maniquí normal.
-- [ ] DummyArmored: daño visiblemente menor; con rifle algo mayor (penetración).
+- [ ] DummyArmoured: daño visiblemente menor; con rifle algo mayor (penetración).
 - [ ] DummyEvasive: ~50% de fallos.
 - [ ] Mover durante el wind-up: el ataque se cancela sin daño.
 - [ ] K sobre el objetivo mientras te acercas: te detienes, no eliges otro.

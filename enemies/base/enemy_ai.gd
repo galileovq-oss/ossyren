@@ -1,7 +1,7 @@
 class_name EnemyAI
 extends Node
-## IA minima de Fase 2: si el jugador entra en `aggro_radius` (o te atacan), persigue y ataca.
-## Los roles reales (hostigador, tanque, etc.) llegan en Fase 6.
+## Minimal Phase 2 AI: if the player enters `aggro_radius` (or attacks it), it chases and attacks.
+## Real roles (harasser, tank, etc.) arrive in Phase 6.
 
 @export var aggro_radius: float = 9.0
 @export var reengage_interval: float = 0.4
@@ -65,7 +65,7 @@ func _engage() -> void:
 
 
 func _on_attack_received(_result: AttackResult) -> void:
-	# Si te atacan desde fuera del radio (p. ej. con rifle), el enemigo reacciona.
+	# If attacked from outside the radius (e.g. with a rifle), the enemy reacts.
 	if enabled and not _aggro and not _health.is_dead:
 		if not is_instance_valid(_player):
 			_player = get_tree().get_first_node_in_group("player") as Node3D

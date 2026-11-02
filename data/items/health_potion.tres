@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://items/consumables/consumable_data.gd" id="1_cd"]
+
+[resource]
+script = ExtResource("1_cd")
+id = &"health_potion"
+display_name = "Health Potion"
+heal_amount = 50
+heal_per_upgrade = 10
+max_upgrade_level = 5
+cooldown = 8.0
+max_charges = 5

@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_wd")
 id = &"enemy_claws"
-display_name = "Garras"
+display_name = "Claws"
 attack_range = 1.6
 requires_line_of_sight = false
 damage_min = 4.0
 damage_max = 7.0
-armor_penetration = 0.0
+armour_penetration = 0.0
 attack_interval = 1.65
 impact_delay = 0.47

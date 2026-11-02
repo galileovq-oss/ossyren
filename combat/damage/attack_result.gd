@@ -1,6 +1,6 @@
 class_name AttackResult
 extends RefCounted
-## Resultado completo de un ataque resuelto. Se usa para aplicar daño, feedback y logs.
+## Full result of a resolved attack. Used to apply damage, feedback and logs.
 
 var attacker: Node3D = null
 var defender: Node3D = null
@@ -13,17 +13,20 @@ var hit_chance: float = 0.0
 var hit_roll: float = 0.0
 
 var raw_damage: float = 0.0
-var armor_multiplier: float = 1.0
+var armour_multiplier: float = 1.0
 var dr_multiplier: float = 1.0
 var final_damage: int = 0
+## Part of final_damage soaked up by a barrier (does not reduce health).
+var absorbed: int = 0
 var killed: bool = false
 
 
 func describe() -> String:
 	if not hit:
-		return "%s -> %s: FALLO (prob %.0f%%, tirada %.2f)" % [
+		return "%s -> %s: MISS (chance %.0f%%, roll %.2f)" % [
 			attacker_name, defender_name, hit_chance * 100.0, hit_roll]
-	return "%s -> %s: GOLPE (prob %.0f%%, tirada %.2f) %.1f x armadura %.2f x DR %.2f = %d%s" % [
+	return "%s -> %s: HIT (chance %.0f%%, roll %.2f) %.1f x armour %.2f x DR %.2f = %d%s%s" % [
 		attacker_name, defender_name, hit_chance * 100.0, hit_roll,
-		raw_damage, armor_multiplier, dr_multiplier, final_damage,
-		" [MUERTE]" if killed else ""]
+		raw_damage, armour_multiplier, dr_multiplier, final_damage,
+		(" (%d absorbed)" % absorbed) if absorbed > 0 else "",
+		" [KILLED]" if killed else ""]

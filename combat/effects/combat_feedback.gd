@@ -1,8 +1,8 @@
 class_name CombatFeedback
 extends Node
-## Feedback PROCEDURAL (sin animaciones todavia): embestida sincronizada con el impacto,
-## destello y rebote al recibir golpe, numeros flotantes, trazador a distancia y muerte.
-## Anima el nodo `Body` de la entidad (MeshInstance3D). Se sustituira por animaciones reales.
+## PROCEDURAL feedback (no real animations yet): lunge synced with the impact, hit flash and
+## squash, floating numbers, rifle tracer, barrier bubble and death. Animates the entity's `Body`
+## node (MeshInstance3D). To be replaced by real animations.
 
 @export var visual: MeshInstance3D
 @export var floater_height: float = 2.3
@@ -13,6 +13,7 @@ var _health: HealthComponent
 var _base_pos: Vector3
 var _base_scale: Vector3
 var _overlay: StandardMaterial3D
+var _barrier_mesh: MeshInstance3D
 var _attack_tween: Tween
 var _hit_tween: Tween
 
@@ -22,7 +23,7 @@ func _ready() -> void:
 	if visual == null:
 		visual = _entity.get_node_or_null("Body") as MeshInstance3D
 	if visual == null:
-		push_warning("CombatFeedback: no se encontro el nodo 'Body'.")
+		push_warning("CombatFeedback: 'Body' node not found.")
 		return
 	_base_pos = visual.position
 	_base_scale = visual.scale
@@ -32,6 +33,7 @@ func _ready() -> void:
 	_overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_overlay.albedo_color = Color(1, 1, 1, 0)
 	visual.material_overlay = _overlay
+	_build_barrier_mesh()
 
 	_combat = _entity.get_node_or_null("CombatController") as CombatController
 	if _combat != null:
@@ -41,7 +43,27 @@ func _ready() -> void:
 	_health = _entity.get_node_or_null("HealthComponent") as HealthComponent
 	if _health != null:
 		_health.attack_received.connect(_on_attack_received)
+		_health.healed.connect(_on_healed)
+		_health.barrier_changed.connect(_on_barrier_changed)
 		_health.died.connect(_on_died)
+
+
+func _build_barrier_mesh() -> void:
+	var sphere: SphereMesh = SphereMesh.new()
+	sphere.radius = 1.15
+	sphere.height = 2.3
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.3, 0.8, 0.9, 0.22)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_barrier_mesh = MeshInstance3D.new()
+	_barrier_mesh.mesh = sphere
+	_barrier_mesh.material_override = mat
+	_barrier_mesh.position = Vector3(0, 0.9, 0)
+	_barrier_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_barrier_mesh.visible = false
+	_entity.add_child.call_deferred(_barrier_mesh)
 
 
 func _on_attack_started(_target: Node3D, impact_delay: float) -> void:
@@ -72,17 +94,31 @@ func _on_attack_impact(result: AttackResult) -> void:
 func _on_attack_received(result: AttackResult) -> void:
 	var pos: Vector3 = _entity.global_position + Vector3.UP * floater_height
 	var scene: Node = get_tree().current_scene
-	if result.hit:
-		var color: Color = Color(1.0, 0.35, 0.3) if _entity.is_in_group("player") else Color(1.0, 0.9, 0.5)
-		FloatingText.spawn(scene, pos, str(result.final_damage), color)
-		_play_hit()
-	else:
-		FloatingText.spawn(scene, pos, "Fallo", Color(0.7, 0.75, 0.8))
+	if not result.hit:
+		FloatingText.spawn(scene, pos, tr("Miss"), Color(0.7, 0.75, 0.8))
+		return
+	var lost: int = result.final_damage - result.absorbed
+	if lost > 0:
+		var colour: Color = Color(1.0, 0.35, 0.3) if _entity.is_in_group("player") else Color(1.0, 0.9, 0.5)
+		FloatingText.spawn(scene, pos, str(lost), colour)
+	if result.absorbed > 0:
+		FloatingText.spawn(scene, pos + Vector3.UP * 0.5, tr("Absorbed %d") % result.absorbed, Color(0.4, 0.85, 1.0))
+	_play_hit()
+
+
+func _on_healed(amount: int) -> void:
+	FloatingText.spawn(get_tree().current_scene, _entity.global_position + Vector3.UP * floater_height,
+			"+%d" % amount, Color(0.4, 1.0, 0.5))
+
+
+func _on_barrier_changed(amount: int, _time_left: float) -> void:
+	_barrier_mesh.visible = amount > 0
 
 
 func _on_died(_result: AttackResult) -> void:
 	_kill(_attack_tween)
 	_kill(_hit_tween)
+	_barrier_mesh.visible = false
 	visual.position = _base_pos
 	var tween: Tween = create_tween()
 	tween.tween_property(visual, "scale", Vector3(_base_scale.x * 1.1, 0.05, _base_scale.z * 1.1), 0.4)

@@ -1,8 +1,8 @@
 extends Label
-## Overlay de depuracion: nombre, version, FPS y lineas de cualquier nodo del grupo
-## "debug_info" que implemente get_debug_text(). F3 para ocultar.
+## Debug overlay: name, version, FPS and lines from any node in the group
+## "debug_info" that implements get_debug_text(). F3 hides it.
 
-const HELP_TEXT: String = "Click: mover/atacar | Click der.: cancelar | Q/E: arma (debug) | K: matar objetivo | R: reiniciar | F3: ocultar"
+const HELP_TEXT: String = "LMB: move/attack | RMB: cancel | 1-4: abilities | F: potion | Space: tactical pause | Q/E: weapon (debug) | K: kill target | G: refill potions | U: upgrade potion | R: restart | F3: hide"
 
 
 func _ready() -> void:
@@ -22,11 +22,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _refresh() -> void:
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("%s  v%s  |  Godot %s  |  FPS: %d" % [
+	lines.append("%s  v%s  |  Godot %s  |  FPS: %d%s" % [
 		ProjectSettings.get_setting("application/config/name"),
 		ProjectSettings.get_setting("application/config/version"),
 		Engine.get_version_info().string,
 		Engine.get_frames_per_second(),
+		"  |  PAUSED" if get_tree().paused else "",
 	])
 	for node: Node in get_tree().get_nodes_in_group("debug_info"):
 		if node.has_method("get_debug_text"):
@@ -34,5 +35,5 @@ func _refresh() -> void:
 	lines.append(HELP_TEXT)
 	var combat_text: String = CombatLog.get_recent_text()
 	if combat_text != "":
-		lines.append("--- Combate ---\n" + combat_text)
+		lines.append("--- Combat ---\n" + combat_text)
 	text = "\n".join(lines)

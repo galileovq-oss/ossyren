@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://core/movement_controller.gd" id="1_move"]
 [ext_resource type="Script" path="res://combat/targeting/targeting_controller.gd" id="2_target"]
@@ -11,6 +11,12 @@
 [ext_resource type="Script" path="res://combat/attacks/combat_controller.gd" id="9_combat"]
 [ext_resource type="Script" path="res://combat/effects/combat_feedback.gd" id="10_fb"]
 [ext_resource type="Resource" path="res://data/classes/player_test_stats.tres" id="11_pstats"]
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="12_ad"]
+[ext_resource type="Resource" path="res://data/abilities/brace.tres" id="13_brace"]
+[ext_resource type="Resource" path="res://data/abilities/hardened.tres" id="14_hardened"]
+[ext_resource type="Script" path="res://combat/attacks/ability_controller.gd" id="15_ac"]
+[ext_resource type="Script" path="res://player/components/consumable_controller.gd" id="16_cc"]
+[ext_resource type="Resource" path="res://data/items/health_potion.tres" id="17_potion"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -68,6 +74,15 @@ base = ExtResource("11_pstats")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("8_health")
+
+[node name="AbilityController" type="Node" parent="."]
+script = ExtResource("15_ac")
+abilities = Array[ExtResource("12_ad")]([ExtResource("13_brace")])
+passives = Array[ExtResource("12_ad")]([ExtResource("14_hardened")])
+
+[node name="ConsumableController" type="Node" parent="."]
+script = ExtResource("16_cc")
+potion = ExtResource("17_potion")
 
 [node name="MovementController" type="Node" parent="." node_paths=PackedStringArray("agent")]
 script = ExtResource("1_move")

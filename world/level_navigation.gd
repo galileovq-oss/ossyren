@@ -1,7 +1,7 @@
 class_name LevelNavigation
 extends NavigationRegion3D
-## Genera la malla de navegacion en tiempo de ejecucion a partir de los StaticBody3D
-## hijos (capa WORLD). Solucion de Fase 1; para salas finales se puede hornear en el editor.
+## Generates the navigation mesh at runtime from the StaticBody3D
+## children (WORLD layer). Phase 1 solution; final rooms can be baked in the editor.
 
 signal navigation_ready
 
@@ -23,7 +23,7 @@ func _ready() -> void:
 	NavigationServer3D.bake_from_source_geometry_data(nav_mesh, source)
 	navigation_mesh = nav_mesh
 
-	# El mapa de navegacion se sincroniza en el siguiente paso de fisica.
+	# The navigation map syncs on the next physics step.
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	nav_ready = true

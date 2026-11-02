@@ -1,20 +1,44 @@
 class_name StatsComponent
 extends Node
-## Punto UNICO de lectura de estadisticas. Hoy devuelve los valores base; en Fase 7 sumara
-## equipo, atributos y talentos aqui, sin tocar al resto de sistemas.
+## SINGLE point for reading stats. Today it returns base values plus modifiers; in Phase 7 it will
+## also add equipment, attributes and talents here without touching any other system.
+
+const STAT_ACCURACY: StringName = &"accuracy"
+const STAT_EVASION: StringName = &"evasion"
+const STAT_ARMOUR: StringName = &"armour"
+const STAT_DAMAGE_REDUCTION: StringName = &"damage_reduction"
 
 @export var base: StatBlock
+
+# source (StringName) -> { stat (StringName) -> additive float }
+var _modifiers: Dictionary = {}
 
 
 func _ready() -> void:
 	if base == null:
-		# Las entidades con datos en la raiz (EnemyBase) exponen 'stats'.
+		# Entities that keep their data on the root (EnemyBase) expose 'stats'.
 		var inherited: Variant = get_parent().get("stats")
 		if inherited is StatBlock:
 			base = inherited
 	if base == null:
 		push_warning("StatsComponent en '%s' sin StatBlock; usando valores por defecto." % get_parent().name)
 		base = StatBlock.new()
+
+
+## Replaces every modifier from `source` (passives, buffs, equipment...). Values are additive.
+func set_modifiers(source: StringName, values: Dictionary) -> void:
+	_modifiers[source] = values
+
+
+func clear_modifiers(source: StringName) -> void:
+	_modifiers.erase(source)
+
+
+func _bonus(stat: StringName) -> float:
+	var total: float = 0.0
+	for source in _modifiers:
+		total += float(_modifiers[source].get(stat, 0.0))
+	return total
 
 
 func get_display_name() -> String:
@@ -26,23 +50,23 @@ func get_max_health() -> int:
 
 
 func get_accuracy() -> float:
-	return base.accuracy
+	return base.accuracy + _bonus(STAT_ACCURACY)
 
 
 func get_evasion() -> float:
-	return base.evasion
+	return base.evasion + _bonus(STAT_EVASION)
 
 
-func get_armor() -> float:
-	return base.armor
+func get_armour() -> float:
+	return base.armour + _bonus(STAT_ARMOUR)
 
 
-func get_armor_penetration() -> float:
-	return 0.0  # Hook para equipo/talentos (Fase 7). El arma aporta la suya.
+func get_armour_penetration() -> float:
+	return 0.0  # Hook for equipment/talents (Phase 7). The weapon provides its own.
 
 
 func get_damage_reduction() -> float:
-	return base.damage_reduction
+	return base.damage_reduction + _bonus(STAT_DAMAGE_REDUCTION)
 
 
 func get_move_speed() -> float:

@@ -4,11 +4,11 @@
 
 [resource]
 script = ExtResource("1_sb")
-display_name = "Maniqui blindado"
+display_name = "Armoured Dummy"
 max_health = 80
 accuracy = 0.0
 evasion = 0.0
-armor = 100.0
+armour = 100.0
 damage_reduction = 0.0
 body_radius = 0.5
 move_speed = 3.4

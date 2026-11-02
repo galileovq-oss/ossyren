@@ -1,5 +1,10 @@
 # Convenciones — Ossyren
 
+## Idioma
+- **Inglés británico (en-GB) es la base del proyecto**: textos del juego, UI, nombres de datos e identificadores propios (`armour`, no `armor`). Ver [`STYLE_GUIDE.md`](STYLE_GUIDE.md).
+- Los nombres de la API de Godot no se tocan (`Color`, `center`…).
+- **Código y comentarios en inglés; commits y documentos de trabajo en español.**
+
 ## Godot / GDScript
 - Versión fija: **4.7.2-stable**. Sin C#. No actualizar motor a mitad de fase; antes de hacerlo: commit limpio + branch de respaldo.
 - GDScript tipado siempre que sea posible (`var x: int`, `-> void`).
@@ -11,7 +16,9 @@
 - Valores de balance fuera del código: en `Resource` (WeaponData, AbilityData, EnemyData…) o `@export`.
 - Evitar un `Player.gd` gigante: composición de nodos + componentes pequeños.
 - Capas de física 3D: 1 world, 2 player, 3 enemies, 4 projectiles, 5 interactables, 6 targetable.
-- Acciones de input (nombres estables): `click_primary`, `click_secondary`, `pause_tactical`, `skill_1..4`, `weapon_set_swap`, `open_inventory`, `open_character`, `open_map`, `open_quests`.
+- Acciones de input (nombres estables): `click_primary`, `click_secondary`, `pause_tactical`, `skill_1..4`, `weapon_set_swap`, `open_inventory`, `open_character`, `open_map`, `open_quests`, `use_potion` (esta última se registra desde `core/input_setup.gd`).
+- Nodos que deben funcionar durante la pausa táctica usan `process_mode = ALWAYS` (se fija en su `_ready`): `TacticalPause`, `PlayerController`, `TargetingController`, `HUD`, `DebugTools`. Todo lo demás se congela con la pausa.
+- Componentes de combate se localizan por nombre fijo bajo la entidad: `StatsComponent`, `HealthComponent`, `MovementController`, `CombatController`, `AbilityController`.
 
 ## Git
 - Rama principal: `main`. Un commit por unidad funcional pequeña.

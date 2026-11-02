@@ -1,40 +1,57 @@
 class_name PlayerController
 extends Node
-## Traduce el input del jugador en ORDENES (mover / atacar / cancelar).
-## No mueve ni ataca directamente: delega en MovementController, CombatController y TargetingController.
+## Turns player input into ORDERS (move / attack / cancel / use ability / use potion).
+## It never moves or attacks directly: it delegates to MovementController, CombatController,
+## AbilityController and ConsumableController.
+## Runs in PROCESS_MODE_ALWAYS so orders can be given while the game is tactically paused.
+
+signal queue_changed
+
+const POTION_TOKEN: String = "potion"
+const ABILITY_PREFIX: String = "ability:"
 
 @export var targeting: TargetingController
 @export var movement: MovementController
-## Provisional: lista de armas de prueba. En Fase 4 lo reemplaza EquipmentComponent.
+## Provisional: test weapons. In Phase 4 EquipmentComponent replaces this.
 @export var weapons: Array[WeaponData] = []
 
 @export_group("Input")
-## Mantener el boton sobre el suelo repite la orden de movimiento (estilo Diablo).
+## Holding the button on the ground keeps issuing move orders (Diablo style).
 @export var hold_to_move: bool = true
 @export var hold_repeat_interval: float = 0.12
-## Decidido: un click en el suelo deselecciona al objetivo actual (y cancela el ataque).
+## Decided: clicking the ground deselects the current target (and cancels the attack).
 @export var ground_click_clears_target: bool = true
-## Main lo activa cuando la navegacion esta lista.
+## While tactically paused, abilities/potions are queued and fire on resume.
+## false = they take effect immediately even while paused (free actions).
+@export var queue_actions_while_paused: bool = true
+## Main enables this once navigation is ready.
 @export var input_enabled: bool = false
 
 var _combat: CombatController
 var _health: HealthComponent
 var _stats: StatsComponent
+var _abilities: AbilityController
+var _consumables: ConsumableController
 var _weapon_index: int = 0
 var _primary_down: bool = false
 var _primary_just_pressed: bool = false
 var _hold_move_active: bool = false
 var _repeat_timer: float = 0.0
+var _queue: Array[String] = []
+var _was_paused: bool = false
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("debug_info")
 	var entity: Node = get_parent()
 	_combat = entity.get_node("CombatController") as CombatController
 	_health = entity.get_node("HealthComponent") as HealthComponent
 	_stats = entity.get_node("StatsComponent") as StatsComponent
+	_abilities = entity.get_node("AbilityController") as AbilityController
+	_consumables = entity.get_node("ConsumableController") as ConsumableController
 	if weapons.is_empty():
-		push_warning("PlayerController: sin armas asignadas; usando WeaponData por defecto.")
+		push_warning("PlayerController: no weapons assigned; using default WeaponData.")
 		weapons.append(WeaponData.new())
 	_combat.set_weapon(get_current_weapon())
 	movement.set_move_speed(_stats.get_move_speed())
@@ -46,6 +63,8 @@ func get_current_weapon() -> WeaponData:
 	return weapons[_weapon_index]
 
 
+# ---------------------------------------------------------------- input
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
@@ -56,15 +75,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		_cancel_orders()
 	elif event.is_action_pressed("weapon_set_swap"):
 		_debug_cycle_weapon()
+	elif InputMap.has_action(&"use_potion") and event.is_action_pressed("use_potion"):
+		request_action(POTION_TOKEN)
+	else:
+		for i in AbilityController.MAX_SLOTS:
+			if event.is_action_pressed("skill_%d" % (i + 1)):
+				request_action("%s%d" % [ABILITY_PREFIX, i])
+				break
 
 
-## _input (no unhandled) para no perder el "soltar" si el cursor termina sobre la UI.
+## _input (not unhandled) so we never miss the release if the cursor ends up over the UI.
 func _input(event: InputEvent) -> void:
 	if event.is_action_released("click_primary"):
 		_primary_down = false
 
 
 func _physics_process(delta: float) -> void:
+	var paused: bool = get_tree().paused
+	if _was_paused and not paused:
+		_flush_queue()
+	_was_paused = paused
 	if not input_enabled:
 		return
 	if _primary_just_pressed:
@@ -91,6 +121,8 @@ func _handle_primary(initial: bool) -> void:
 			_order_move(pick.position, initial)
 
 
+# ---------------------------------------------------------------- orders
+
 func _order_move(point: Vector3, show_marker: bool) -> void:
 	_combat.disengage()
 	movement.move_to(point)
@@ -108,15 +140,63 @@ func _order_attack(target: Targetable) -> void:
 	movement.chase(target.entity, weapon.attack_range, target.target_radius, weapon.requires_line_of_sight)
 
 
-## Provisional: click derecho cancela la orden y deselecciona (confirmar en prototipo).
+## Provisional: right click cancels the order, the target and any queued actions.
 func _cancel_orders() -> void:
 	_combat.disengage()
 	movement.stop()
 	targeting.clear_target()
+	clear_queue()
 
+
+## Public: used by key presses and HUD buttons. `token` is "potion" or "ability:<slot>".
+func request_action(token: String) -> void:
+	if _health.is_dead:
+		return
+	if get_tree().paused and queue_actions_while_paused:
+		if not _queue.has(token) and _is_action_ready(token):
+			_queue.append(token)
+			queue_changed.emit()
+	else:
+		_execute(token)
+
+
+func is_queued(token: String) -> bool:
+	return _queue.has(token)
+
+
+func clear_queue() -> void:
+	if not _queue.is_empty():
+		_queue.clear()
+		queue_changed.emit()
+
+
+func _flush_queue() -> void:
+	var pending: Array[String] = _queue.duplicate()
+	_queue.clear()
+	queue_changed.emit()
+	for token in pending:
+		_execute(token)
+
+
+func _is_action_ready(token: String) -> bool:
+	if token == POTION_TOKEN:
+		return _consumables.can_use()
+	if token.begins_with(ABILITY_PREFIX):
+		return _abilities.can_activate(int(token.trim_prefix(ABILITY_PREFIX)))
+	return false
+
+
+func _execute(token: String) -> void:
+	if token == POTION_TOKEN:
+		_consumables.use()
+	elif token.begins_with(ABILITY_PREFIX):
+		_abilities.activate(int(token.trim_prefix(ABILITY_PREFIX)))
+
+
+# ---------------------------------------------------------------- events
 
 func _on_target_lost(target: Targetable) -> void:
-	# El objetivo murio: detenerse. NO se adquiere otro automaticamente.
+	# The target died: stop. Do NOT acquire another one automatically.
 	_combat.disengage()
 	if is_instance_valid(target) and movement.state == MovementController.State.CHASING \
 			and movement.chase_target == target.entity:
@@ -126,12 +206,14 @@ func _on_target_lost(target: Targetable) -> void:
 func _on_player_died(_result: AttackResult) -> void:
 	input_enabled = false
 	_primary_down = false
+	clear_queue()
 	_combat.disengage()
 	movement.stop()
-	CombatLog.add("%s ha caido. Pulsa R para reiniciar." % _stats.get_display_name())
+	get_tree().paused = false
+	CombatLog.add("%s has fallen. Press R to restart." % _stats.get_display_name())
 
 
-## DEBUG (Fase 1/2): alterna armas para probar rangos. En Fase 4 lo sustituye el cambio de set real.
+## DEBUG (Phase 1/2): cycles weapons to test ranges. Phase 4 replaces it with real weapon sets.
 func _debug_cycle_weapon() -> void:
 	_weapon_index = (_weapon_index + 1) % weapons.size()
 	var weapon: WeaponData = get_current_weapon()
@@ -150,9 +232,12 @@ func get_debug_text() -> String:
 		if t_health != null:
 			target_text += " %d/%d" % [t_health.current_health, t_health.max_health]
 	var dist: float = movement.get_edge_distance_to_chase_target()
-	return "HP: %d/%d | Arma [Q/E]: %s (rango %.1f m, %.0f-%.0f dmg, LoS: %s)\nEstado: %s | En rango: %s | Atacando: %s\nObjetivo: %s | Dist. borde: %s" % [
+	var text: String = "HP: %d/%d | Weapon [Q/E]: %s (range %.1f m, %.0f-%.0f dmg, LoS: %s)\nState: %s | In range: %s | Attacking: %s\nTarget: %s | Edge dist: %s" % [
 		_health.current_health, _health.max_health,
 		weapon.display_name, weapon.attack_range, weapon.damage_min, weapon.damage_max,
 		str(weapon.requires_line_of_sight),
 		MovementController.State.keys()[movement.state], str(movement.in_range), str(_combat.is_attacking),
 		target_text, ("%.1f m" % dist) if dist >= 0.0 else "-"]
+	if not _queue.is_empty():
+		text += "\nQueued: " + ", ".join(_queue)
+	return text

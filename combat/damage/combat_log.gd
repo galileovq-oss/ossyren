@@ -1,6 +1,6 @@
 class_name CombatLog
 extends RefCounted
-## Registro de combate para depuracion: consola (solo builds debug) y overlay en pantalla.
+## Combat log for debugging: console (debug builds only) and on-screen overlay.
 
 const MAX_LINES: int = 8
 

@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_wd")
 id = &"rifle_test"
-display_name = "Rifle de prueba"
+display_name = "Test Rifle"
 attack_range = 10.0
 requires_line_of_sight = true
 damage_min = 6.0
 damage_max = 9.0
-armor_penetration = 15.0
+armour_penetration = 15.0
 attack_interval = 1.18
 impact_delay = 0.18

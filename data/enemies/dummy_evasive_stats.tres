@@ -4,11 +4,11 @@
 
 [resource]
 script = ExtResource("1_sb")
-display_name = "Maniqui evasivo"
+display_name = "Evasive Dummy"
 max_health = 80
 accuracy = 0.0
 evasion = 100.0
-armor = 0.0
+armour = 0.0
 damage_reduction = 0.0
 body_radius = 0.5
 move_speed = 3.4

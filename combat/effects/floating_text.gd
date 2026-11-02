@@ -1,6 +1,6 @@
 class_name FloatingText
 extends Label3D
-## Numero de daño / "Fallo" que sube y se desvanece.
+## Damage number / "Miss" text that rises and fades.
 
 
 static func spawn(parent: Node, world_pos: Vector3, text_value: String, color: Color) -> void:

@@ -1,8 +1,8 @@
 class_name Targetable
 extends Area3D
-## Componente: marca a una entidad (hijo directo de ella) como seleccionable con el raton.
-## Es un Area3D en la capa TARGETABLE; su CollisionShape3D define la zona clicable
-## (puede ser mas generosa que el cuerpo fisico). Dibuja el anillo de hover/seleccion.
+## Component: marks an entity (as a direct child of it) as selectable with the mouse.
+## It is an Area3D on the TARGETABLE layer; its CollisionShape3D defines the clickable area
+## (can be more generous than the physical body). Draws the hover/selection ring.
 
 signal invalidated(targetable: Targetable)
 
@@ -10,7 +10,7 @@ const COLOR_HOVER: Color = Color(1.0, 0.78, 0.25, 0.55)
 const COLOR_SELECTED: Color = Color(0.95, 0.2, 0.15, 0.95)
 
 @export var display_name: String = "Objetivo"
-## Radio del cuerpo, para medir rangos de borde a borde.
+## Body radius, used to measure ranges edge to edge.
 @export var target_radius: float = 0.5
 @export var ring_radius: float = 0.95
 
@@ -46,7 +46,7 @@ func set_hovered(value: bool) -> void:
 	_update_ring()
 
 
-## Llamar cuando el objetivo muere o deja de ser seleccionable.
+## Call when the target dies or stops being selectable.
 func invalidate() -> void:
 	if not is_targetable:
 		return

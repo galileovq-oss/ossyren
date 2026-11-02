@@ -1,17 +1,17 @@
 class_name CombatController
 extends Node
-## Ciclo de ataque de una entidad (jugador o enemigo). Auto-ataca a `target` mientras:
-##   - sea valido (existe y no esta muerto), y
-##   - MovementController este persiguiendolo y `in_range` (rango + LoS del arma).
-## Ciclo: inicio -> (impact_delay) -> IMPACTO (se resuelve el daño) -> recuperacion -> (attack_interval) -> siguiente.
-## Si antes del impacto se pierde el objetivo/rango/orden, el ataque se CANCELA sin daño.
-## No elige objetivos: lo hace quien lo controla (PlayerController / EnemyAI).
+## Attack cycle of an entity (player or enemy). Auto-attacks `target` while:
+##   - it is valid (exists and is not dead), and
+##   - MovementController is chasing it and `in_range` (weapon range + LoS).
+## Cycle: start -> (impact_delay) -> IMPACT (damage is resolved) -> recovery -> (attack_interval) -> next.
+## If the target/range/order is lost before the impact, the attack is CANCELLED with no damage.
+## It does not pick targets: whoever controls it does (PlayerController / EnemyAI).
 
 signal attack_started(target: Node3D, impact_delay: float)
 signal attack_impact(result: AttackResult)
 signal attack_cancelled
 
-## Armas con alcance mayor se tratan como a distancia (trazador visual).
+## Weapons with a longer range are treated as ranged (visual tracer).
 const RANGED_THRESHOLD: float = 4.0
 
 @export var movement: MovementController
@@ -104,8 +104,8 @@ func _resolve_impact() -> void:
 		return
 	var result: AttackResult = DamageCalculator.resolve_attack(
 		stats.get_accuracy(), weapon.damage_min, weapon.damage_max,
-		weapon.armor_penetration + stats.get_armor_penetration(),
-		defender_stats.get_evasion(), defender_stats.get_armor(), defender_stats.get_damage_reduction(),
+		weapon.armour_penetration + stats.get_armour_penetration(),
+		defender_stats.get_evasion(), defender_stats.get_armour(), defender_stats.get_damage_reduction(),
 		_rng)
 	result.attacker = _entity
 	result.defender = target

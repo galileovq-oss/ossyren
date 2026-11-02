@@ -4,11 +4,11 @@
 
 [resource]
 script = ExtResource("1_sb")
-display_name = "Jugador"
+display_name = "Player"
 max_health = 150
 accuracy = 100.0
 evasion = 15.0
-armor = 20.0
+armour = 20.0
 damage_reduction = 0.0
 body_radius = 0.4
 move_speed = 5.1
