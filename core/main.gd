@@ -6,6 +6,7 @@ extends Node3D
 
 
 func _ready() -> void:
+	CombatLog.clear()
 	if not _level.nav_ready:
 		await _level.navigation_ready
 	_player_controller.input_enabled = true

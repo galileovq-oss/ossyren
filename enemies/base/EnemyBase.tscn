@@ -1,0 +1,79 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://enemies/base/enemy_base.gd" id="1_base"]
+[ext_resource type="Script" path="res://combat/targeting/targetable.gd" id="2_targetable"]
+[ext_resource type="Script" path="res://combat/damage/stats_component.gd" id="3_stats"]
+[ext_resource type="Script" path="res://combat/damage/health_component.gd" id="4_health"]
+[ext_resource type="Script" path="res://core/movement_controller.gd" id="5_move"]
+[ext_resource type="Script" path="res://combat/attacks/combat_controller.gd" id="6_combat"]
+[ext_resource type="Script" path="res://combat/effects/combat_feedback.gd" id="7_fb"]
+[ext_resource type="Script" path="res://enemies/base/enemy_ai.gd" id="8_ai"]
+[ext_resource type="Resource" path="res://data/enemies/grunt_stats.tres" id="9_stats"]
+[ext_resource type="Resource" path="res://data/weapons/enemy_claws.tres" id="10_claws"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enemy"]
+radius = 0.5
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_enemy"]
+radius = 0.5
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_pick"]
+height = 2.2
+radius = 0.8
+
+[node name="EnemyBase" type="CharacterBody3D" groups=["enemies"]]
+collision_layer = 4
+collision_mask = 7
+script = ExtResource("1_base")
+stats = ExtResource("9_stats")
+weapon = ExtResource("10_claws")
+aggressive = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_enemy")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_enemy")
+
+[node name="Targetable" type="Area3D" parent="."]
+script = ExtResource("2_targetable")
+display_name = "Enemigo"
+target_radius = 0.5
+ring_radius = 0.95
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Targetable"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("CylinderShape3D_pick")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.4
+target_desired_distance = 0.3
+radius = 0.5
+height = 1.8
+avoidance_enabled = true
+neighbor_distance = 6.0
+max_neighbors = 8
+avoidance_priority = 0.5
+
+[node name="StatsComponent" type="Node" parent="."]
+script = ExtResource("3_stats")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_health")
+
+[node name="MovementController" type="Node" parent="." node_paths=PackedStringArray("agent")]
+script = ExtResource("5_move")
+agent = NodePath("../NavigationAgent3D")
+
+[node name="CombatController" type="Node" parent="."]
+script = ExtResource("6_combat")
+
+[node name="CombatFeedback" type="Node" parent="."]
+script = ExtResource("7_fb")
+
+[node name="EnemyAI" type="Node" parent="."]
+script = ExtResource("8_ai")

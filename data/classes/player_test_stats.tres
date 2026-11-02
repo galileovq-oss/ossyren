@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/damage/stat_block.gd" id="1_sb"]
+
+[resource]
+script = ExtResource("1_sb")
+display_name = "Jugador"
+max_health = 150
+accuracy = 100.0
+evasion = 15.0
+armor = 20.0
+damage_reduction = 0.0
+body_radius = 0.4
+move_speed = 5.1
+tint = Color(0.35, 0.4, 0.45, 1)

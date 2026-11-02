@@ -17,6 +17,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	match key_event.keycode:
 		KEY_K:
 			if targeting != null and is_instance_valid(targeting.current_target):
-				targeting.current_target.invalidate()
+				var health: HealthComponent = targeting.current_target.entity.get_node_or_null("HealthComponent") as HealthComponent
+				if health != null:
+					health.kill()
 		KEY_R:
 			get_tree().reload_current_scene()

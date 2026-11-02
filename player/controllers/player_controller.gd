@@ -1,7 +1,7 @@
 class_name PlayerController
 extends Node
-## Traduce el input del jugador en ORDENES (mover / perseguir / cancelar).
-## No mueve ni ataca directamente: delega en MovementController y TargetingController.
+## Traduce el input del jugador en ORDENES (mover / atacar / cancelar).
+## No mueve ni ataca directamente: delega en MovementController, CombatController y TargetingController.
 
 @export var targeting: TargetingController
 @export var movement: MovementController
@@ -12,11 +12,14 @@ extends Node
 ## Mantener el boton sobre el suelo repite la orden de movimiento (estilo Diablo).
 @export var hold_to_move: bool = true
 @export var hold_repeat_interval: float = 0.12
-## Decision pendiente: ¿un click en el suelo deselecciona al objetivo actual?
-@export var ground_click_clears_target: bool = false
+## Decidido: un click en el suelo deselecciona al objetivo actual (y cancela el ataque).
+@export var ground_click_clears_target: bool = true
 ## Main lo activa cuando la navegacion esta lista.
 @export var input_enabled: bool = false
 
+var _combat: CombatController
+var _health: HealthComponent
+var _stats: StatsComponent
 var _weapon_index: int = 0
 var _primary_down: bool = false
 var _primary_just_pressed: bool = false
@@ -26,10 +29,17 @@ var _repeat_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("debug_info")
+	var entity: Node = get_parent()
+	_combat = entity.get_node("CombatController") as CombatController
+	_health = entity.get_node("HealthComponent") as HealthComponent
+	_stats = entity.get_node("StatsComponent") as StatsComponent
 	if weapons.is_empty():
 		push_warning("PlayerController: sin armas asignadas; usando WeaponData por defecto.")
 		weapons.append(WeaponData.new())
+	_combat.set_weapon(get_current_weapon())
+	movement.set_move_speed(_stats.get_move_speed())
 	targeting.target_lost.connect(_on_target_lost)
+	_health.died.connect(_on_player_died)
 
 
 func get_current_weapon() -> WeaponData:
@@ -82,6 +92,7 @@ func _handle_primary(initial: bool) -> void:
 
 
 func _order_move(point: Vector3, show_marker: bool) -> void:
+	_combat.disengage()
 	movement.move_to(point)
 	if ground_click_clears_target:
 		targeting.clear_target()
@@ -92,37 +103,56 @@ func _order_move(point: Vector3, show_marker: bool) -> void:
 func _order_attack(target: Targetable) -> void:
 	targeting.select(target)
 	var weapon: WeaponData = get_current_weapon()
+	_combat.set_weapon(weapon)
+	_combat.engage(target.entity)
 	movement.chase(target.entity, weapon.attack_range, target.target_radius, weapon.requires_line_of_sight)
 
 
 ## Provisional: click derecho cancela la orden y deselecciona (confirmar en prototipo).
 func _cancel_orders() -> void:
+	_combat.disengage()
 	movement.stop()
 	targeting.clear_target()
 
 
 func _on_target_lost(target: Targetable) -> void:
 	# El objetivo murio: detenerse. NO se adquiere otro automaticamente.
+	_combat.disengage()
 	if is_instance_valid(target) and movement.state == MovementController.State.CHASING \
 			and movement.chase_target == target.entity:
 		movement.stop()
 
 
-## DEBUG (Fase 1): alterna armas para probar rangos. En Fase 4 lo sustituye el cambio de set real.
+func _on_player_died(_result: AttackResult) -> void:
+	input_enabled = false
+	_primary_down = false
+	_combat.disengage()
+	movement.stop()
+	CombatLog.add("%s ha caido. Pulsa R para reiniciar." % _stats.get_display_name())
+
+
+## DEBUG (Fase 1/2): alterna armas para probar rangos. En Fase 4 lo sustituye el cambio de set real.
 func _debug_cycle_weapon() -> void:
 	_weapon_index = (_weapon_index + 1) % weapons.size()
 	var weapon: WeaponData = get_current_weapon()
+	_combat.set_weapon(weapon)
 	if movement.state == MovementController.State.CHASING:
 		movement.set_chase_params(weapon.attack_range, weapon.requires_line_of_sight)
 
 
 func get_debug_text() -> String:
 	var weapon: WeaponData = get_current_weapon()
-	var target_name: String = "-"
+	var target_text: String = "-"
 	if is_instance_valid(targeting.current_target):
-		target_name = targeting.current_target.display_name
+		var t: Targetable = targeting.current_target
+		var t_health: HealthComponent = t.entity.get_node_or_null("HealthComponent") as HealthComponent
+		target_text = t.display_name
+		if t_health != null:
+			target_text += " %d/%d" % [t_health.current_health, t_health.max_health]
 	var dist: float = movement.get_edge_distance_to_chase_target()
-	return "Arma [Q/E]: %s (rango %.1f m, LoS: %s)\nEstado: %s | En rango: %s\nObjetivo: %s | Dist. borde: %s" % [
-		weapon.display_name, weapon.attack_range, str(weapon.requires_line_of_sight),
-		MovementController.State.keys()[movement.state], str(movement.in_range),
-		target_name, ("%.1f m" % dist) if dist >= 0.0 else "-"]
+	return "HP: %d/%d | Arma [Q/E]: %s (rango %.1f m, %.0f-%.0f dmg, LoS: %s)\nEstado: %s | En rango: %s | Atacando: %s\nObjetivo: %s | Dist. borde: %s" % [
+		_health.current_health, _health.max_health,
+		weapon.display_name, weapon.attack_range, weapon.damage_min, weapon.damage_max,
+		str(weapon.requires_line_of_sight),
+		MovementController.State.keys()[movement.state], str(movement.in_range), str(_combat.is_attacking),
+		target_text, ("%.1f m" % dist) if dist >= 0.0 else "-"]

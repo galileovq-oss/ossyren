@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://core/movement_controller.gd" id="1_move"]
 [ext_resource type="Script" path="res://combat/targeting/targeting_controller.gd" id="2_target"]
@@ -6,6 +6,11 @@
 [ext_resource type="Script" path="res://items/weapons/weapon_data.gd" id="4_wd"]
 [ext_resource type="Resource" path="res://data/weapons/melee_test.tres" id="5_melee"]
 [ext_resource type="Resource" path="res://data/weapons/rifle_test.tres" id="6_rifle"]
+[ext_resource type="Script" path="res://combat/damage/stats_component.gd" id="7_stats"]
+[ext_resource type="Script" path="res://combat/damage/health_component.gd" id="8_health"]
+[ext_resource type="Script" path="res://combat/attacks/combat_controller.gd" id="9_combat"]
+[ext_resource type="Script" path="res://combat/effects/combat_feedback.gd" id="10_fb"]
+[ext_resource type="Resource" path="res://data/classes/player_test_stats.tres" id="11_pstats"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -42,8 +47,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("CapsuleMesh_body")
 surface_material_override/0 = SubResource("Mat_body")
 
-[node name="Visor" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, -0.35)
+[node name="Visor" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, -0.35)
 mesh = SubResource("BoxMesh_visor")
 surface_material_override/0 = SubResource("Mat_visor")
 
@@ -52,6 +57,17 @@ path_desired_distance = 0.4
 target_desired_distance = 0.3
 radius = 0.4
 height = 1.8
+avoidance_enabled = true
+neighbor_distance = 6.0
+max_neighbors = 8
+avoidance_priority = 1.0
+
+[node name="StatsComponent" type="Node" parent="."]
+script = ExtResource("7_stats")
+base = ExtResource("11_pstats")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("8_health")
 
 [node name="MovementController" type="Node" parent="." node_paths=PackedStringArray("agent")]
 script = ExtResource("1_move")
@@ -59,6 +75,12 @@ agent = NodePath("../NavigationAgent3D")
 
 [node name="TargetingController" type="Node" parent="."]
 script = ExtResource("2_target")
+
+[node name="CombatController" type="Node" parent="."]
+script = ExtResource("9_combat")
+
+[node name="CombatFeedback" type="Node" parent="."]
+script = ExtResource("10_fb")
 
 [node name="PlayerController" type="Node" parent="." node_paths=PackedStringArray("targeting", "movement")]
 script = ExtResource("3_pc")

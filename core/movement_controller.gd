@@ -50,6 +50,7 @@ var _chase_goal: Vector3 = Vector3.ZERO
 var _repath_timer: float = 0.0
 var _blocked_time: float = 0.0
 var _face_dir: Vector3 = Vector3.ZERO
+var _desired_dir: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -58,6 +59,10 @@ func _ready() -> void:
 	if body == null or agent == null:
 		push_error("MovementController: faltan 'body' y/o 'agent'.")
 		set_physics_process(false)
+		return
+	agent.max_speed = move_speed
+	if agent.avoidance_enabled:
+		agent.velocity_computed.connect(_on_velocity_computed)
 
 
 # ---------------------------------------------------------------- API publica
@@ -97,6 +102,12 @@ func stop() -> void:
 	_set_state(State.IDLE)
 
 
+func set_move_speed(value: float) -> void:
+	move_speed = value
+	if agent != null:
+		agent.max_speed = value
+
+
 func get_edge_distance_to_chase_target() -> float:
 	if not is_instance_valid(chase_target):
 		return -1.0
@@ -115,7 +126,20 @@ func _physics_process(delta: float) -> void:
 			move_dir = _step_move()
 		State.CHASING:
 			move_dir = _step_chase(delta)
-	_apply_motion(move_dir, delta)
+	_desired_dir = move_dir
+	var desired_velocity: Vector3 = move_dir * move_speed
+	if agent.avoidance_enabled:
+		# La velocidad segura (evitando a otros agentes) llega en _on_velocity_computed.
+		agent.velocity = desired_velocity
+	else:
+		_move_body(desired_velocity, delta)
+	_update_facing(move_dir, delta)
+
+
+func _on_velocity_computed(safe_velocity: Vector3) -> void:
+	if not is_physics_processing():
+		return
+	_move_body(safe_velocity, get_physics_process_delta_time())
 
 
 func _step_move() -> Vector3:
@@ -170,9 +194,9 @@ func _update_chase_path(delta: float) -> void:
 		agent.target_position = goal
 
 
-func _apply_motion(move_dir: Vector3, delta: float) -> void:
-	body.velocity.x = move_dir.x * move_speed
-	body.velocity.z = move_dir.z * move_speed
+func _move_body(horizontal: Vector3, delta: float) -> void:
+	body.velocity.x = horizontal.x
+	body.velocity.z = horizontal.z
 	if body.is_on_floor():
 		body.velocity.y = 0.0
 	else:
@@ -180,7 +204,7 @@ func _apply_motion(move_dir: Vector3, delta: float) -> void:
 	body.move_and_slide()
 
 	# Deteccion de bloqueo: queremos movernos pero casi no avanzamos.
-	if move_dir != Vector3.ZERO:
+	if _desired_dir != Vector3.ZERO:
 		var real: Vector3 = body.get_real_velocity()
 		real.y = 0.0
 		if real.length() < move_speed * blocked_speed_ratio:
@@ -193,6 +217,8 @@ func _apply_motion(move_dir: Vector3, delta: float) -> void:
 	else:
 		_blocked_time = 0.0
 
+
+func _update_facing(move_dir: Vector3, delta: float) -> void:
 	var look: Vector3 = move_dir if move_dir != Vector3.ZERO else _face_dir
 	look.y = 0.0
 	if look.length_squared() > 0.0001:

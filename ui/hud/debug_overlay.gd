@@ -32,4 +32,7 @@ func _refresh() -> void:
 		if node.has_method("get_debug_text"):
 			lines.append(node.call("get_debug_text"))
 	lines.append(HELP_TEXT)
+	var combat_text: String = CombatLog.get_recent_text()
+	if combat_text != "":
+		lines.append("--- Combate ---\n" + combat_text)
 	text = "\n".join(lines)
