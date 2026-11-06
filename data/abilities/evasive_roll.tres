@@ -1,0 +1,19 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"evasive_roll"
+display_name = "Evasive Roll"
+description = "Dash 5 m towards the cursor (walls stop it), then +60 Evasion for 1.5 s. Slips out of telegraphed zones."
+kind = 0
+targeting = 2
+effect = 4
+cooldown = 2.5
+mana_cost = 10.0
+effect_duration = 1.5
+dash_distance = 5.0
+dash_duration = 0.22
+area_colour = Color(0.4, 1, 0.6, 1)
+bonus_evasion = 60.0

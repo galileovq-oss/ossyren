@@ -1,0 +1,21 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"aegis"
+display_name = "Aegis"
+description = "A resonance bubble that absorbs a large amount of damage. In Auto mode it also fires before a hostile telegraphed zone hits you."
+kind = 0
+targeting = 0
+effect = 1
+cooldown = 3.0
+mana_cost = 30.0
+effect_amount = 90.0
+effect_duration = 6.0
+supports_auto = true
+default_mode = 0
+auto_health_threshold = 0.5
+auto_on_incoming_area = true
+auto_incoming_window = 0.8

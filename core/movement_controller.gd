@@ -13,6 +13,7 @@ signal entered_range(target: Node3D)
 signal left_range(target: Node3D)
 signal chase_failed(target: Node3D)
 signal movement_blocked
+signal dash_finished
 
 @export_group("Referencias")
 ## Defaults to the parent. Must be a CharacterBody3D.
@@ -44,6 +45,8 @@ var chase_target: Node3D = null
 var in_range: bool = false
 ## While true the entity stands still (e.g. while casting). Orders stay stored.
 var locked: bool = false
+## True while a dash is in progress (overrides navigation).
+var is_dashing: bool = false
 
 var _desired_range: float = 2.0
 var _target_radius: float = 0.5
@@ -53,6 +56,9 @@ var _repath_timer: float = 0.0
 var _blocked_time: float = 0.0
 var _face_dir: Vector3 = Vector3.ZERO
 var _desired_dir: Vector3 = Vector3.ZERO
+var _dash_dir: Vector3 = Vector3.ZERO
+var _dash_speed: float = 0.0
+var _dash_time_left: float = 0.0
 
 
 func _ready() -> void:
@@ -98,6 +104,18 @@ func set_chase_params(desired_range: float, requires_los: bool) -> void:
 	_requires_los = requires_los
 
 
+## Short burst of movement. Drops the current order; physical collisions (walls) stop it.
+func dash(direction: Vector3, distance: float, duration: float) -> void:
+	direction.y = 0.0
+	if direction.length() < 0.01 or duration <= 0.0:
+		return
+	stop()
+	_dash_dir = direction.normalized()
+	_dash_speed = distance / duration
+	_dash_time_left = duration
+	is_dashing = true
+
+
 func set_locked(value: bool) -> void:
 	locked = value
 
@@ -126,6 +144,15 @@ func get_edge_distance_to_chase_target() -> float:
 
 func _physics_process(delta: float) -> void:
 	_face_dir = Vector3.ZERO
+	if is_dashing:
+		_dash_time_left -= delta
+		_desired_dir = Vector3.ZERO
+		_move_body(_dash_dir * _dash_speed, delta)
+		_update_facing(_dash_dir, delta)
+		if _dash_time_left <= 0.0:
+			is_dashing = false
+			dash_finished.emit()
+		return
 	var move_dir: Vector3 = Vector3.ZERO
 	if not locked:
 		match state:
@@ -144,7 +171,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_velocity_computed(safe_velocity: Vector3) -> void:
-	if not is_physics_processing():
+	if not is_physics_processing() or is_dashing:
 		return
 	_move_body(safe_velocity, get_physics_process_delta_time())
 

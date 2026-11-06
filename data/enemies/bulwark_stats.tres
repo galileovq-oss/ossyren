@@ -1,0 +1,17 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/damage/stat_block.gd" id="1_sb"]
+
+[resource]
+script = ExtResource("1_sb")
+display_name = "Bulwark"
+max_health = 150
+max_mana = 0
+mana_regen = 0.0
+accuracy = 90.0
+evasion = 0.0
+armour = 90.0
+damage_reduction = 0.0
+body_radius = 0.55
+move_speed = 3.0
+tint = Color(0.35, 0.4, 0.5, 1)

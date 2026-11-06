@@ -28,6 +28,13 @@ var _swap_left: float = 0.0
 
 func _ready() -> void:
 	_combat = get_parent().get_node_or_null("CombatController") as CombatController
+	if sets.is_empty():
+		# The player root exposes 'weapon_sets' from its ClassData.
+		var inherited: Variant = get_parent().get("weapon_sets")
+		if inherited is Array:
+			for item in inherited:
+				if item is WeaponData:
+					sets.append(item)
 
 
 func get_active_weapon() -> WeaponData:

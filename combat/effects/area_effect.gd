@@ -41,6 +41,8 @@ func _ready() -> void:
 	_rng.randomize()
 	add_to_group("area_effects")
 	_build_visuals()
+	if _ability.area_wind_up > 0.0 and _target_group == &"player":
+		Sfx.play(self, &"warn", -9.0)  # audible warning for hostile telegraphs
 	if _ability.area_wind_up <= 0.0:
 		_detonate()
 
@@ -82,6 +84,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _detonate() -> void:
+	Sfx.play(self, &"boom", -7.0)
 	_hit_all()
 	_fill.scale = Vector3.ONE
 	if _ability.area_duration <= 0.0:
@@ -108,6 +111,7 @@ func _hit_all() -> void:
 			_ability.damage_physical, _ability.can_miss)
 		result.attacker = _source if is_instance_valid(_source) else null
 		result.defender = entity
+		result.physical = _ability.damage_physical
 		result.attacker_name = "%s (%s)" % [_source_name, _ability.display_name]
 		result.defender_name = stats.get_display_name()
 		health.receive_attack(result)

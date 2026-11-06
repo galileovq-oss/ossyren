@@ -173,12 +173,13 @@ func _resolve_impact() -> void:
 		stats.get_accuracy(), weapon.damage_min, weapon.damage_max,
 		weapon.armour_penetration + stats.get_armour_penetration(),
 		defender_stats.get_evasion(), defender_stats.get_armour(), defender_stats.get_damage_reduction(),
-		_rng)
+		_rng, weapon.damage_physical)
 	result.attacker = _entity
 	result.defender = target
 	result.attacker_name = stats.get_display_name()
 	result.defender_name = defender_stats.get_display_name()
 	result.ranged = weapon.attack_range > RANGED_THRESHOLD
+	result.physical = weapon.damage_physical
 	defender_health.receive_attack(result)
 	_combat_time_left = combat_linger
 	CombatLog.add(result.describe())

@@ -68,5 +68,6 @@ func _physics_process(_delta: float) -> void:
 	if added > 0:
 		FloatingText.spawn(get_tree().current_scene, global_position + Vector3.UP * 1.2,
 				tr("+%d Potion") % added, Color(0.4, 1.0, 0.6) if kind == ConsumableData.Kind.HEALTH else Color(0.5, 0.7, 1.0))
+		Sfx.play(self, &"pickup", -10.0)
 		CombatLog.add("Picked up %d potion charge(s)" % added)
 		queue_free()

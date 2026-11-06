@@ -1,3 +1,4 @@
+class_name Hud
 extends CanvasLayer
 ## Minimal tactical HUD (Phase 3), built in code. Proper UI scenes arrive in Phase 9.
 ## Runs in PROCESS_MODE_ALWAYS so it stays interactive during the tactical pause.
@@ -23,6 +24,11 @@ var _target_box: PanelContainer
 var _target_label: Label
 var _target_bar: ProgressBar
 var _banner: Label
+var _boss_box: PanelContainer
+var _boss_label: Label
+var _boss_bar: ProgressBar
+var _summary_box: PanelContainer
+var _summary: Label
 var _dim: ColorRect
 var _slot_buttons: Array[Button] = []
 var _mode_buttons: Array[Button] = []
@@ -33,11 +39,10 @@ var _weapon_button: Button
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null:
-		push_warning("HUD: no player found.")
-		set_process(false)
-		return
+	set_process(false)  # starts once Main calls setup() with the spawned player
+
+
+func setup(player: Node) -> void:
 	_pc = player.get_node("PlayerController") as PlayerController
 	_health = player.get_node("HealthComponent") as HealthComponent
 	_abilities = player.get_node("AbilityController") as AbilityController
@@ -47,11 +52,19 @@ func _ready() -> void:
 	_mana_potions = player.get_node("ManaPotionController") as ConsumableController
 	_targeting = player.get_node("TargetingController") as TargetingController
 	_build()
+	set_process(true)
+
+
+## Big centre-screen summary (floor cleared).
+func show_summary(text: String) -> void:
+	_summary.text = text
+	_summary_box.visible = true
 
 
 func _process(_delta: float) -> void:
 	_refresh_player()
 	_refresh_target()
+	_refresh_boss()
 	_refresh_slots()
 	_refresh_banner()
 
@@ -147,11 +160,37 @@ func _build() -> void:
 	_target_box.visible = false
 	root.add_child(_target_box)
 
+	# Boss bar: top-centre, under the target panel
+	_boss_box = PanelContainer.new()
+	_place(_boss_box, 0.5, 0.0, 0.0, 74.0, Control.GROW_DIRECTION_BOTH, Control.GROW_DIRECTION_END)
+	var boss_col: VBoxContainer = VBoxContainer.new()
+	_boss_label = Label.new()
+	_boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_bar = ProgressBar.new()
+	_boss_bar.show_percentage = false
+	_boss_bar.custom_minimum_size = Vector2(420, 18)
+	_boss_bar.add_theme_stylebox_override("fill", _flat(Color(0.65, 0.15, 0.55)))
+	boss_col.add_child(_boss_label)
+	boss_col.add_child(_boss_bar)
+	_boss_box.add_child(boss_col)
+	_boss_box.visible = false
+	root.add_child(_boss_box)
+
+	# Summary (floor cleared)
+	_summary_box = PanelContainer.new()
+	_place(_summary_box, 0.5, 0.5, 0.0, 0.0, Control.GROW_DIRECTION_BOTH, Control.GROW_DIRECTION_BOTH)
+	_summary = Label.new()
+	_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_summary.add_theme_font_size_override("font_size", 24)
+	_summary_box.add_child(_summary)
+	_summary_box.visible = false
+	root.add_child(_summary_box)
+
 	# Pause / death banner
 	_banner = Label.new()
 	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_banner.add_theme_font_size_override("font_size", 28)
-	_place(_banner, 0.5, 0.0, 0.0, 90.0, Control.GROW_DIRECTION_BOTH, Control.GROW_DIRECTION_END)
+	_place(_banner, 0.5, 0.0, 0.0, 150.0, Control.GROW_DIRECTION_BOTH, Control.GROW_DIRECTION_END)
 	_banner.visible = false
 	root.add_child(_banner)
 
@@ -220,6 +259,26 @@ func _refresh_target() -> void:
 		_target_label.text += "  %d / %d" % [target_health.current_health, target_health.max_health]
 		_target_bar.max_value = target_health.max_health
 		_target_bar.value = target_health.current_health
+
+
+func _refresh_boss() -> void:
+	var boss: Node3D = get_tree().get_first_node_in_group("boss") as Node3D
+	if boss == null:
+		_boss_box.visible = false
+		return
+	var boss_health: HealthComponent = boss.get_node_or_null("HealthComponent") as HealthComponent
+	var boss_stats: StatsComponent = boss.get_node_or_null("StatsComponent") as StatsComponent
+	var player: Node3D = _health.get_parent() as Node3D
+	var flat: Vector3 = boss.global_position - player.global_position
+	flat.y = 0.0
+	if boss_health == null or boss_health.is_dead or flat.length() > 22.0:
+		_boss_box.visible = false
+		return
+	_boss_box.visible = true
+	_boss_label.text = "%s   %d / %d" % [boss_stats.get_display_name() if boss_stats != null else "Boss",
+			boss_health.current_health, boss_health.max_health]
+	_boss_bar.max_value = boss_health.max_health
+	_boss_bar.value = boss_health.current_health
 
 
 func _refresh_slots() -> void:

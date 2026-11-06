@@ -88,6 +88,7 @@ func _on_attack_started(_target: Node3D, impact_delay: float) -> void:
 
 ## Glow while casting: cyan for the player, orange for enemies (a warning before their telegraph appears).
 func _on_cast_started(_slot: int, _duration: float) -> void:
+	Sfx.play(_entity, &"cast", -13.0)
 	_kill(_hit_tween)
 	_overlay.albedo_color = Color(0.4, 0.9, 1.0, 0.4) if _entity.is_in_group("player") else Color(1.0, 0.55, 0.2, 0.5)
 
@@ -108,6 +109,8 @@ func _on_attack_cancelled() -> void:
 
 
 func _on_attack_impact(result: AttackResult) -> void:
+	if result.ranged:
+		Sfx.play(_entity, &"shot", -11.0)
 	if result.ranged and is_instance_valid(result.defender):
 		_spawn_tracer(_entity.global_position + Vector3.UP * 1.2,
 				result.defender.global_position + Vector3.UP * 1.2)
@@ -118,11 +121,18 @@ func _on_attack_received(result: AttackResult) -> void:
 	var scene: Node = get_tree().current_scene
 	if not result.hit:
 		FloatingText.spawn(scene, pos, tr("Miss"), Color(0.7, 0.75, 0.8))
+		Sfx.play(_entity, &"miss", -16.0)
 		return
+	Sfx.play(_entity, &"hit", -12.0)
 	var lost: int = result.final_damage - result.absorbed
 	if lost > 0:
-		var colour: Color = Color(1.0, 0.35, 0.3) if _entity.is_in_group("player") else Color(1.0, 0.9, 0.5)
+		# Colour tells the damage type: red = hurts the player, yellow = physical, cyan = energy.
+		var colour: Color = Color(1.0, 0.9, 0.5) if result.physical else Color(0.5, 0.9, 1.0)
+		if _entity.is_in_group("player"):
+			colour = Color(1.0, 0.35, 0.3)
 		FloatingText.spawn(scene, pos, str(lost), colour)
+	if result.physical and result.armour_multiplier <= 0.55 and lost > 0:
+		FloatingText.spawn(scene, pos + Vector3.UP * 0.9, tr("Armoured"), Color(0.65, 0.7, 0.8))
 	if result.absorbed > 0:
 		FloatingText.spawn(scene, pos + Vector3.UP * 0.5, tr("Absorbed %d") % result.absorbed, Color(0.4, 0.85, 1.0))
 	_play_hit()
@@ -138,6 +148,7 @@ func _on_barrier_changed(amount: int, _time_left: float) -> void:
 
 
 func _on_died(_result: AttackResult) -> void:
+	Sfx.play(_entity, &"death", -8.0)
 	_kill(_attack_tween)
 	_kill(_hit_tween)
 	_barrier_mesh.visible = false

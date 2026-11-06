@@ -1,0 +1,20 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://items/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+id = &"bulwark_fists"
+display_name = "Heavy Fists"
+family = 3
+attack_range = 1.8
+requires_line_of_sight = false
+damage_min = 7.0
+damage_max = 11.0
+armour_penetration = 0.0
+damage_physical = true
+attack_interval = 2.1
+impact_fraction = 0.45
+attack_speed_bonus = 0.0
+speed_thresholds = PackedFloat32Array(0)
+speed_rates = PackedFloat32Array(1)

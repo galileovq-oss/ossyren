@@ -1,5 +1,18 @@
 # Changelog / registro de decisiones
 
+## 2026-11-02 — Decisiones para la Fase 7 y ajuste del Ranger
+- **Atributos: cuatro.** Strength (daño físico/requisitos), **Agility (evasión + precisión/impacto + movilidad)**, Vitality (HP/supervivencia), Tech (energía/eficiencia y requisitos). Accuracy se fusiona en Agility.
+- **Muerte estilo Diablo:** reaparecer en el hub y perder algo menor (oro o durabilidad). Pendiente de implementar con el hub (Fase 8/9); definir qué se pierde cuando exista la moneda/durabilidad (Fase 7).
+- **Ranger: dash real.** Nuevo efecto `DASH` (`MovementController.dash`): Evasive Roll avanza 5 m hacia el cursor en 0,22 s (los muros lo detienen), cancela el ataque en curso, bloquea ataques durante el dash y da +60 evasión 1,5 s. Sustituye a Evasive Stance. Sonido "dash" y marcador de salida.
+
+## 2026-11-02 — Fase 6 (vertical slice)
+- `ClassData` + 3 clases jugables (Vanguard, Ranger, Aether) con kit mínimo (pasiva, defensa activa, ofensiva). `Player` recibe su clase **antes** de entrar al árbol; pantalla de selección (`ClassSelect`) y `GameSession` para sobrevivir a los reinicios.
+- Armas de energía (`damage_physical = false`, familia ENERGY: Arc Emitter). Nuevo efecto **BUFF** de habilidades y bonos de AS/CS/mana regen en pasivas.
+- Enemigos por rol: Bulwark (tanque), Spitter (a distancia), Skitterer (evasivo), Brute (área), **Overseer** (mini-jefe con fase 2 `enrage_threshold` y `min_enemy_phase`). `EnemyBase` ahora tiene `abilities`, `aggro_radius`, `visual_scale`, `is_boss`.
+- Piso "Substation Delta" generado por `tools/gen_level.py`: muros bajos, 5 salas, 2 opcionales, cofres placeholder (`LootChest`), resumen al derrotar al jefe.
+- `Sfx`: sonidos procedurales placeholder. Feedback: colores por tipo de daño y aviso "Armoured". Barra de jefe en el HUD. `SessionKeys` (R reinicia, F2 elige clase) disponible siempre.
+- Pruebas de reglas de datos (`tests/test_game_data.gd`): cooldowns cortos (≤ 5 s), coste de mana, preparación ≤ 3 intervalos.
+
 ## 2026-11-02 — Decisiones de Fase 5
 - Apuntado de AoE: cursor directo (confirmado). AoE no se esquivan con Evasion (confirmado).
 - **Recurso de habilidades: mana clásico** (nombre de trabajo) + **cooldowns cortos** estilo Diablo 2 (0,5–3 s); odiamos los cooldowns largos.

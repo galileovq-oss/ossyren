@@ -1,0 +1,17 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/damage/stat_block.gd" id="1_sb"]
+
+[resource]
+script = ExtResource("1_sb")
+display_name = "Spitter"
+max_health = 40
+max_mana = 0
+mana_regen = 0.0
+accuracy = 100.0
+evasion = 15.0
+armour = 0.0
+damage_reduction = 0.0
+body_radius = 0.45
+move_speed = 3.8
+tint = Color(0.4, 0.75, 0.3, 1)

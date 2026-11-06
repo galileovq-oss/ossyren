@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"blight"
+display_name = "Blight"
+description = "BOSS (phase 2): a lingering field of corruption dropped where you stand. Keep moving."
+kind = 0
+targeting = 2
+effect = 2
+cast_time = 0.6
+cooldown = 11.0
+cast_range = 9.0
+area_radius = 3.2
+area_wind_up = 1.1
+area_duration = 7.0
+area_tick_interval = 0.5
+damage_min = 6.0
+damage_max = 9.0
+damage_physical = false
+can_miss = false
+area_colour = Color(0.7, 0.2, 0.9, 1)
+min_enemy_phase = 2

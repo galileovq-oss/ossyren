@@ -5,13 +5,14 @@
 [resource]
 script = ExtResource("1_wd")
 id = &"blade_test"
-display_name = "Test Blade"
+display_name = "Combat Blade"
 family = 1
 attack_range = 1.8
 requires_line_of_sight = false
 damage_min = 8.0
 damage_max = 11.0
 armour_penetration = 0.0
+damage_physical = true
 attack_interval = 0.9
 impact_fraction = 0.4
 attack_speed_bonus = 0.0

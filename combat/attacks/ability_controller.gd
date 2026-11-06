@@ -39,6 +39,8 @@ var _cast_left: float = 0.0
 var _cast_point: Vector3 = Vector3.ZERO
 var _pending_point: Vector3 = Vector3.ZERO
 var _pending_anchor: Node3D = null
+# source (StringName) -> seconds left
+var _buffs: Dictionary = {}
 
 
 func _ready() -> void:
@@ -48,11 +50,19 @@ func _ready() -> void:
 	_movement = _entity.get_node_or_null("MovementController") as MovementController
 	_combat = _entity.get_node_or_null("CombatController") as CombatController
 	_mana = _entity.get_node_or_null("ManaComponent") as ManaComponent
+	# Entities that keep their data on the root (Player from ClassData, EnemyBase) expose 'abilities'/'passives'.
 	if abilities.is_empty():
-		# Entities that keep their data on the root (EnemyBase) expose a single 'ability'.
-		var inherited: Variant = _entity.get("ability")
-		if inherited is AbilityData:
-			abilities.append(inherited)
+		var inherited: Variant = _entity.get("abilities")
+		if inherited is Array:
+			for item in inherited:
+				if item is AbilityData:
+					abilities.append(item)
+	if passives.is_empty():
+		var inherited_passives: Variant = _entity.get("passives")
+		if inherited_passives is Array:
+			for item in inherited_passives:
+				if item is AbilityData:
+					passives.append(item)
 	for i in mini(abilities.size(), MAX_SLOTS):
 		_cooldowns.append(0.0)
 		_modes.append(abilities[i].default_mode)
@@ -133,12 +143,17 @@ func request_cast(slot: int, point: Vector3, allow_approach: bool = true) -> boo
 	var ability: AbilityData = abilities[slot]
 	if ability.targeting == AbilityData.Targeting.SELF:
 		point = _entity.global_position
-	elif point == Vector3.INF:
+	elif point == Vector3.INF and ability.effect != AbilityData.Effect.DASH:
 		request_failed.emit(slot, "No target")
 		CombatLog.add("%s: no target for %s" % [_stats.get_display_name(), ability.display_name])
 		return false
+	if point == Vector3.INF:  # a dash without an aim point goes where the entity faces
+		point = _entity.global_position - _entity.global_transform.basis.z * ability.dash_distance
 	point.y = _entity.global_position.y
 	_clear_pending()
+	if ability.effect == AbilityData.Effect.DASH:
+		_start(slot, ability, point)  # dashes never walk to the point: they clamp to dash_distance
+		return true
 	if ability.targeting != AbilityData.Targeting.SELF and not _is_point_castable(ability, point):
 		if not allow_approach or _movement == null:
 			request_failed.emit(slot, "Out of range")
@@ -167,6 +182,7 @@ func cancel_cast() -> bool:
 # ---------------------------------------------------------------- loop
 
 func _physics_process(delta: float) -> void:
+	_tick_buffs(delta)
 	_update_pending()
 	if casting_slot >= 0:
 		_cast_left -= delta
@@ -244,11 +260,39 @@ func _resolve(slot: int, ability: AbilityData, point: Vector3) -> void:
 			_health.add_barrier(int(ability.effect_amount), ability.effect_duration)
 		AbilityData.Effect.AREA:
 			_spawn_area(ability, point)
+		AbilityData.Effect.BUFF:
+			_apply_buff(ability)
+		AbilityData.Effect.DASH:
+			_do_dash(ability, point)
 	_cooldowns[slot] = ability.cooldown
 	if _combat != null and ability.effect == AbilityData.Effect.AREA:
 		_combat.refresh_combat()
 	ability_used.emit(slot, ability)
 	CombatLog.add("%s used %s" % [_stats.get_display_name(), ability.display_name])
+
+
+func _do_dash(ability: AbilityData, point: Vector3) -> void:
+	if _movement == null:
+		return
+	var direction: Vector3 = point - _entity.global_position
+	direction.y = 0.0
+	if direction.length() < 0.3:
+		direction = -_entity.global_transform.basis.z
+	GroundMarker.spawn(get_tree().current_scene, _entity.global_position, ability.area_colour)
+	Sfx.play(_entity, &"dash", -9.0)
+	if _combat != null:
+		_combat.disengage()
+		_combat.set_lock(&"dash", true)
+	if not _movement.dash_finished.is_connected(_on_dash_finished):
+		_movement.dash_finished.connect(_on_dash_finished)
+	_movement.dash(direction, ability.dash_distance, ability.dash_duration)
+	if ability.effect_duration > 0.0:
+		_apply_buff(ability)  # post-dash bonuses (e.g. Evasion)
+
+
+func _on_dash_finished() -> void:
+	if _combat != null:
+		_combat.set_lock(&"dash", false)
 
 
 func _spawn_area(ability: AbilityData, point: Vector3) -> void:
@@ -307,17 +351,49 @@ func _on_died(_result: AttackResult) -> void:
 
 
 func _apply_passives() -> void:
-	var bonuses: Dictionary = {
+	var bonuses: Dictionary = _empty_bonuses()
+	for passive in passives:
+		if passive == null or passive.kind != AbilityData.Kind.PASSIVE:
+			continue
+		_add_bonuses(bonuses, passive)
+	_stats.set_modifiers(&"passives", bonuses)
+
+
+func _apply_buff(ability: AbilityData) -> void:
+	var source: StringName = StringName("buff_" + String(ability.id))
+	var bonuses: Dictionary = _empty_bonuses()
+	_add_bonuses(bonuses, ability)
+	_stats.set_modifiers(source, bonuses)
+	_buffs[source] = ability.effect_duration
+
+
+func _tick_buffs(delta: float) -> void:
+	if _buffs.is_empty():
+		return
+	for source in _buffs.keys():
+		_buffs[source] -= delta
+		if _buffs[source] <= 0.0:
+			_stats.clear_modifiers(source)
+			_buffs.erase(source)
+
+
+func _empty_bonuses() -> Dictionary:
+	return {
 		StatsComponent.STAT_ACCURACY: 0.0,
 		StatsComponent.STAT_EVASION: 0.0,
 		StatsComponent.STAT_ARMOUR: 0.0,
 		StatsComponent.STAT_DAMAGE_REDUCTION: 0.0,
+		StatsComponent.STAT_ATTACK_SPEED: 0.0,
+		StatsComponent.STAT_CAST_SPEED: 0.0,
+		StatsComponent.STAT_MANA_REGEN: 0.0,
 	}
-	for passive in passives:
-		if passive == null or passive.kind != AbilityData.Kind.PASSIVE:
-			continue
-		bonuses[StatsComponent.STAT_ACCURACY] += passive.bonus_accuracy
-		bonuses[StatsComponent.STAT_EVASION] += passive.bonus_evasion
-		bonuses[StatsComponent.STAT_ARMOUR] += passive.bonus_armour
-		bonuses[StatsComponent.STAT_DAMAGE_REDUCTION] += passive.bonus_damage_reduction
-	_stats.set_modifiers(&"passives", bonuses)
+
+
+func _add_bonuses(bonuses: Dictionary, ability: AbilityData) -> void:
+	bonuses[StatsComponent.STAT_ACCURACY] += ability.bonus_accuracy
+	bonuses[StatsComponent.STAT_EVASION] += ability.bonus_evasion
+	bonuses[StatsComponent.STAT_ARMOUR] += ability.bonus_armour
+	bonuses[StatsComponent.STAT_DAMAGE_REDUCTION] += ability.bonus_damage_reduction
+	bonuses[StatsComponent.STAT_ATTACK_SPEED] += ability.bonus_attack_speed
+	bonuses[StatsComponent.STAT_CAST_SPEED] += ability.bonus_cast_speed
+	bonuses[StatsComponent.STAT_MANA_REGEN] += ability.bonus_mana_regen

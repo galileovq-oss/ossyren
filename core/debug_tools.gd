@@ -1,7 +1,7 @@
 class_name DebugTools
 extends Node
 ## Debug-only shortcuts (removed from release builds):
-##   K kill target | R restart | G refill potions + mana | U upgrade potion
+##   K kill target | G refill potions + mana | U upgrade potion
 ##   PageUp/PageDown: Attack Speed +/-5% | Home/End: Cast Speed +/-5% | Backspace: reset AS/CS
 ##   B / N: cycle the weapon in Set I / Set II (Test Maul -> Test Blade -> Test Rifle)
 
@@ -57,9 +57,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_cycle_set(0)
 		KEY_N:
 			_cycle_set(1)
-		KEY_R:
-			get_tree().paused = false
-			get_tree().reload_current_scene()
 
 
 func _adjust_speed(as_delta: float, cs_delta: float) -> void:

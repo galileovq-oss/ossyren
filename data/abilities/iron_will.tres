@@ -4,8 +4,9 @@
 
 [resource]
 script = ExtResource("1_ad")
-id = &"hardened"
-display_name = "Hardened"
-description = "Reinforced plating permanently reduces all incoming damage."
+id = &"iron_will"
+display_name = "Iron Will"
+description = "Passive: +20 Armour and +10% Damage Reduction."
 kind = 1
+bonus_armour = 20.0
 bonus_damage_reduction = 0.1

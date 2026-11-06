@@ -63,6 +63,7 @@ func use() -> bool:
 	_cooldown_left = potion.cooldown
 	charges_changed.emit(charges)
 	potion_used.emit(restored)
+	Sfx.play(self, &"drink", -10.0)
 	CombatLog.add("%s used %s (+%d)" % [_stats.get_display_name(), potion.display_name, restored])
 	return true
 

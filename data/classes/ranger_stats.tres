@@ -1,0 +1,17 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/damage/stat_block.gd" id="1_sb"]
+
+[resource]
+script = ExtResource("1_sb")
+display_name = "Ranger"
+max_health = 120
+max_mana = 90
+mana_regen = 1.5
+accuracy = 120.0
+evasion = 35.0
+armour = 5.0
+damage_reduction = 0.0
+body_radius = 0.4
+move_speed = 5.3
+tint = Color(0.35, 0.55, 0.4, 1)

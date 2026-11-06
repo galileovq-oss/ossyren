@@ -6,7 +6,7 @@ extends Resource
 ## Costs: mana (classic resource) plus a short cooldown.
 
 enum Kind { ACTIVE, PASSIVE }
-enum Effect { NONE, BARRIER, AREA }
+enum Effect { NONE, BARRIER, AREA, BUFF, DASH }
 enum Mode { MANUAL, AUTO }
 ## SELF: on the caster. TARGET: on the selected (or hovered) target. GROUND: at the cursor point
 ## (falls back to the selected target).
@@ -36,10 +36,18 @@ enum Targeting { SELF, TARGET, GROUND }
 @export var cast_range: float = 0.0
 @export var requires_line_of_sight: bool = false
 
-@export_group("Barrier")
+@export_group("Barrier / Buff")
 ## BARRIER: damage absorbed.
 @export var effect_amount: float = 40.0
+## BARRIER and BUFF: how long it lasts. A BUFF applies the "Passive bonuses" below for this long.
 @export var effect_duration: float = 6.0
+
+@export_group("Dash")
+## DASH: a short burst of movement towards the cursor (or the facing direction). Orders, attacks and
+## the current chase are dropped; walls stop it. After the dash the "Passive bonuses" below apply as a BUFF
+## for `effect_duration` seconds (e.g. extra Evasion).
+@export var dash_distance: float = 5.0
+@export var dash_duration: float = 0.22
 
 @export_group("Area")
 @export var area_radius: float = 2.0
@@ -67,8 +75,15 @@ enum Targeting { SELF, TARGET, GROUND }
 ## Seconds before detonation at which rule 2 triggers.
 @export var auto_incoming_window: float = 0.8
 
-@export_group("Passive bonuses")
+@export_group("Enemy use")
+## Enemies only: the ability is available from this boss phase on (1 = always).
+@export var min_enemy_phase: int = 1
+
+@export_group("Passive bonuses (also used by BUFF)")
 @export var bonus_accuracy: float = 0.0
 @export var bonus_evasion: float = 0.0
 @export var bonus_armour: float = 0.0
 @export var bonus_damage_reduction: float = 0.0
+@export var bonus_attack_speed: float = 0.0
+@export var bonus_cast_speed: float = 0.0
+@export var bonus_mana_regen: float = 0.0

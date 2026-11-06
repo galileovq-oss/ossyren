@@ -206,7 +206,8 @@ func _is_action_ready(token: String, point: Vector3) -> bool:
 		var ability: AbilityData = _abilities.get_ability(slot)
 		if ability == null or not _abilities.can_activate(slot):
 			return false
-		return ability.targeting == AbilityData.Targeting.SELF or point != Vector3.INF
+		return ability.targeting == AbilityData.Targeting.SELF or point != Vector3.INF \
+				or ability.effect == AbilityData.Effect.DASH
 	return false
 
 

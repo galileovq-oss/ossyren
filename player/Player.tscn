@@ -1,5 +1,6 @@
 [gd_scene load_steps=33 format=3]
 
+[ext_resource type="Script" path="res://player/player.gd" id="0_player"]
 [ext_resource type="Script" path="res://core/movement_controller.gd" id="1_move"]
 [ext_resource type="Script" path="res://combat/targeting/targeting_controller.gd" id="2_target"]
 [ext_resource type="Script" path="res://player/controllers/player_controller.gd" id="3_pc"]
@@ -10,20 +11,15 @@
 [ext_resource type="Script" path="res://combat/damage/health_component.gd" id="8_health"]
 [ext_resource type="Script" path="res://combat/attacks/combat_controller.gd" id="9_combat"]
 [ext_resource type="Script" path="res://combat/effects/combat_feedback.gd" id="10_fb"]
-[ext_resource type="Resource" path="res://data/classes/player_test_stats.tres" id="11_pstats"]
 [ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="12_ad"]
-[ext_resource type="Resource" path="res://data/abilities/brace.tres" id="13_brace"]
-[ext_resource type="Resource" path="res://data/abilities/hardened.tres" id="14_hardened"]
 [ext_resource type="Script" path="res://combat/attacks/ability_controller.gd" id="15_ac"]
 [ext_resource type="Script" path="res://player/components/consumable_controller.gd" id="16_cc"]
 [ext_resource type="Resource" path="res://data/items/health_potion.tres" id="17_potion"]
 [ext_resource type="Resource" path="res://data/weapons/blade_test.tres" id="18_blade"]
+[ext_resource type="Resource" path="res://data/weapons/arc_emitter.tres" id="25_arc"]
 [ext_resource type="Script" path="res://player/components/equipment_component.gd" id="19_eq"]
 [ext_resource type="Script" path="res://combat/resources/mana_component.gd" id="23_mana"]
 [ext_resource type="Resource" path="res://data/items/mana_potion.tres" id="24_mpotion"]
-[ext_resource type="Resource" path="res://data/abilities/resonance_burst.tres" id="20_burst"]
-[ext_resource type="Resource" path="res://data/abilities/collapse.tres" id="21_collapse"]
-[ext_resource type="Resource" path="res://data/abilities/static_field.tres" id="22_field"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -48,6 +44,7 @@ emission = Color(0.18, 0.83, 0.78, 1)
 emission_energy_multiplier = 2.5
 
 [node name="Player" type="CharacterBody3D" groups=["player"]]
+script = ExtResource("0_player")
 collision_layer = 2
 collision_mask = 5
 
@@ -77,7 +74,6 @@ avoidance_priority = 1.0
 
 [node name="StatsComponent" type="Node" parent="."]
 script = ExtResource("7_stats")
-base = ExtResource("11_pstats")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("8_health")
@@ -87,8 +83,6 @@ script = ExtResource("23_mana")
 
 [node name="AbilityController" type="Node" parent="."]
 script = ExtResource("15_ac")
-abilities = Array[ExtResource("12_ad")]([ExtResource("13_brace"), ExtResource("20_burst"), ExtResource("21_collapse"), ExtResource("22_field")])
-passives = Array[ExtResource("12_ad")]([ExtResource("14_hardened")])
 
 [node name="ConsumableController" type="Node" parent="."]
 script = ExtResource("16_cc")
@@ -113,8 +107,7 @@ potion = ExtResource("24_mpotion")
 
 [node name="EquipmentComponent" type="Node" parent="."]
 script = ExtResource("19_eq")
-sets = Array[ExtResource("4_wd")]([ExtResource("5_maul"), ExtResource("6_rifle")])
-library = Array[ExtResource("4_wd")]([ExtResource("5_maul"), ExtResource("18_blade"), ExtResource("6_rifle")])
+library = Array[ExtResource("4_wd")]([ExtResource("5_maul"), ExtResource("18_blade"), ExtResource("6_rifle"), ExtResource("25_arc")])
 
 [node name="PlayerController" type="Node" parent="." node_paths=PackedStringArray("targeting", "movement")]
 script = ExtResource("3_pc")

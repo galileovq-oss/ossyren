@@ -1,0 +1,17 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/damage/stat_block.gd" id="1_sb"]
+
+[resource]
+script = ExtResource("1_sb")
+display_name = "Aether"
+max_health = 100
+max_mana = 150
+mana_regen = 2.5
+accuracy = 100.0
+evasion = 10.0
+armour = 0.0
+damage_reduction = 0.0
+body_radius = 0.4
+move_speed = 5.1
+tint = Color(0.4, 0.45, 0.75, 1)

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"ground_pound"
+display_name = "Ground Pound"
+description = "Close-range physical area: a short cast, a brief telegraph, then a heavy slam. Armour applies."
+kind = 0
+targeting = 2
+effect = 2
+cast_time = 0.35
+cooldown = 2.0
+mana_cost = 20.0
+cast_range = 3.5
+requires_line_of_sight = false
+area_radius = 2.8
+area_wind_up = 0.5
+area_duration = 0.0
+damage_min = 30.0
+damage_max = 40.0
+damage_physical = true
+can_miss = false
+area_colour = Color(1, 0.6, 0.2, 1)

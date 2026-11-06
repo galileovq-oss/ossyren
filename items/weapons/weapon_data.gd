@@ -3,7 +3,7 @@ extends Resource
 ## Weapon data. Phase 4: families, timing and per-weapon speed breakpoints.
 ## Phase 7 adds requirements, affixes and quality.
 
-enum Family { MELEE_HEAVY, MELEE_FAST, RIFLE, NATURAL }
+enum Family { MELEE_HEAVY, MELEE_FAST, RIFLE, NATURAL, ENERGY }
 
 @export var id: StringName = &"weapon"
 @export var display_name: String = "Weapon"
@@ -20,6 +20,8 @@ enum Family { MELEE_HEAVY, MELEE_FAST, RIFLE, NATURAL }
 @export var damage_max: float = 8.0
 ## Flat armour this weapon ignores. See DamageCalculator.
 @export var armour_penetration: float = 0.0
+## true = armour applies. false = ENERGY damage (ignores armour; DR still applies).
+@export var damage_physical: bool = true
 
 @export_group("Timing")
 ## Seconds per attack at rate 1.0 (breakpoint tier "1/1").

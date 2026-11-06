@@ -1,0 +1,22 @@
+[gd_resource type="Resource" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://player/classes/class_data.gd" id="1_cd"]
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="2_ad"]
+[ext_resource type="Resource" path="res://data/classes/vanguard_stats.tres" id="3_stats"]
+[ext_resource type="Resource" path="res://data/weapons/maul_test.tres" id="4_w1"]
+[ext_resource type="Resource" path="res://data/weapons/blade_test.tres" id="5_w2"]
+[ext_resource type="Resource" path="res://data/abilities/bulwark.tres" id="a0"]
+[ext_resource type="Resource" path="res://data/abilities/ground_pound.tres" id="a1"]
+[ext_resource type="Resource" path="res://data/abilities/iron_will.tres" id="p0"]
+
+[resource]
+script = ExtResource("1_cd")
+id = &"vanguard"
+display_name = "Vanguard"
+description = "Frontline bruiser. High health and armour, low mana. Wins by standing its ground."
+kit_summary = "Set I: Breaching Maul \n Set II: Combat Blade\nPassive: Iron Will (+armour, +DR)\n1 Bulwark (barrier) \n 2 Ground Pound (melee area)"
+stats = ExtResource("3_stats")
+weapon_set_1 = ExtResource("4_w1")
+weapon_set_2 = ExtResource("5_w2")
+abilities = Array[ExtResource("2_ad")]([ExtResource("a0"), ExtResource("a1")])
+passives = Array[ExtResource("2_ad")]([ExtResource("p0")])

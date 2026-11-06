@@ -1,0 +1,22 @@
+[gd_resource type="Resource" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://player/classes/class_data.gd" id="1_cd"]
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="2_ad"]
+[ext_resource type="Resource" path="res://data/classes/ranger_stats.tres" id="3_stats"]
+[ext_resource type="Resource" path="res://data/weapons/rifle_test.tres" id="4_w1"]
+[ext_resource type="Resource" path="res://data/weapons/blade_test.tres" id="5_w2"]
+[ext_resource type="Resource" path="res://data/abilities/evasive_roll.tres" id="a0"]
+[ext_resource type="Resource" path="res://data/abilities/frag_grenade.tres" id="a1"]
+[ext_resource type="Resource" path="res://data/abilities/deadeye.tres" id="p0"]
+
+[resource]
+script = ExtResource("1_cd")
+id = &"ranger"
+display_name = "Ranger"
+description = "Mobile marksman. High accuracy and evasion, fragile. Wins by never being where the hit lands."
+kit_summary = "Set I: Carbine \n Set II: Combat Blade\nPassive: Deadeye (+accuracy, +attack speed)\n1 Evasive Roll (dash + evasion) \n 2 Frag Grenade (ranged area)"
+stats = ExtResource("3_stats")
+weapon_set_1 = ExtResource("4_w1")
+weapon_set_2 = ExtResource("5_w2")
+abilities = Array[ExtResource("2_ad")]([ExtResource("a0"), ExtResource("a1")])
+passives = Array[ExtResource("2_ad")]([ExtResource("p0")])

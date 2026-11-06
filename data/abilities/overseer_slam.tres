@@ -1,0 +1,23 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"overseer_slam"
+display_name = "Overseer Slam"
+description = "BOSS: a wide telegraphed slam where you were standing."
+kind = 0
+targeting = 2
+effect = 2
+cast_time = 0.6
+cooldown = 5.0
+cast_range = 4.0
+area_radius = 3.2
+area_wind_up = 1.0
+area_duration = 0.0
+damage_min = 32.0
+damage_max = 44.0
+damage_physical = true
+can_miss = false
+area_colour = Color(1, 0.25, 0.15, 1)

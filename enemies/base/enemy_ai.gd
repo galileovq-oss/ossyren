@@ -26,6 +26,9 @@ func _ready() -> void:
 	_abilities = _entity.get_node_or_null("AbilityController") as AbilityController
 	var aggressive: Variant = _entity.get("aggressive")
 	enabled = true if aggressive == null else bool(aggressive)
+	var radius: Variant = _entity.get("aggro_radius")
+	if radius != null:
+		aggro_radius = float(radius)
 	_health.attack_received.connect(_on_attack_received)
 
 
@@ -58,16 +61,23 @@ func _physics_process(delta: float) -> void:
 			_engage()
 
 
-## Slot 0 is the enemy's special attack: cast at the player's current position when it is within range.
-## The zone only appears after the cast, at that point, so the player has time to move out.
+## Tries the enemy's abilities in slot order and casts the first one that is ready, allowed in the
+## current boss phase and within range. The zone is placed at the player's CURRENT position but only
+## appears after the cast, so the player has time to move out.
 func _try_ability() -> void:
-	if _abilities == null or not _abilities.can_activate(0):
+	if _abilities == null or _abilities.is_casting():
 		return
-	var ability: AbilityData = _abilities.get_ability(0)
+	var phase_value: Variant = _entity.get("phase")
+	var phase: int = 1 if phase_value == null else int(phase_value)
 	var flat: Vector3 = _player.global_position - _entity.global_position
 	flat.y = 0.0
-	if flat.length() <= ability.cast_range:
-		_abilities.request_cast(0, _player.global_position, false)
+	for slot in AbilityController.MAX_SLOTS:
+		var ability: AbilityData = _abilities.get_ability(slot)
+		if ability == null or ability.min_enemy_phase > phase or not _abilities.can_activate(slot):
+			continue
+		if flat.length() <= ability.cast_range:
+			_abilities.request_cast(slot, _player.global_position, false)
+			return
 
 
 func _engage() -> void:

@@ -4,16 +4,16 @@
 
 [resource]
 script = ExtResource("1_ad")
-id = &"brace"
-display_name = "Brace"
-description = "Diverts power to the plating, creating a barrier that absorbs incoming damage for a short time. In Auto mode it also fires when a hostile telegraphed zone is about to hit you."
+id = &"bulwark"
+display_name = "Bulwark"
+description = "Reinforces the plating: a big barrier. In Auto mode it also fires before a hostile telegraphed zone hits you."
 kind = 0
 targeting = 0
 effect = 1
-cooldown = 3.0
-mana_cost = 20.0
-effect_amount = 40.0
-effect_duration = 6.0
+cooldown = 4.0
+mana_cost = 25.0
+effect_amount = 70.0
+effect_duration = 5.0
 supports_auto = true
 default_mode = 0
 auto_health_threshold = 0.5

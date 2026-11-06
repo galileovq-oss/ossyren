@@ -7,6 +7,8 @@ var defender: Node3D = null
 var attacker_name: String = "?"
 var defender_name: String = "?"
 var ranged: bool = false
+## false = ENERGY damage (ignores armour).
+var physical: bool = true
 
 var hit: bool = false
 var hit_chance: float = 0.0

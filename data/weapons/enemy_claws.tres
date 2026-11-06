@@ -12,6 +12,7 @@ requires_line_of_sight = false
 damage_min = 4.0
 damage_max = 7.0
 armour_penetration = 0.0
+damage_physical = true
 attack_interval = 1.65
 impact_fraction = 0.285
 attack_speed_bonus = 0.0
