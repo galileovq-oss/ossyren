@@ -40,6 +40,12 @@ func _ready() -> void:
 		_combat.attack_started.connect(_on_attack_started)
 		_combat.attack_cancelled.connect(_on_attack_cancelled)
 		_combat.attack_impact.connect(_on_attack_impact)
+	var abilities: AbilityController = _entity.get_node_or_null("AbilityController") as AbilityController
+	if abilities != null:
+		abilities.cast_started.connect(_on_cast_started)
+		abilities.cast_finished.connect(_on_cast_ended)
+		abilities.cast_cancelled.connect(_on_cast_ended)
+		abilities.request_failed.connect(_on_request_failed)
 	_health = _entity.get_node_or_null("HealthComponent") as HealthComponent
 	if _health != null:
 		_health.attack_received.connect(_on_attack_received)
@@ -78,6 +84,22 @@ func _on_attack_started(_target: Node3D, impact_delay: float) -> void:
 			maxf(impact_delay - thrust_time, 0.05)).set_trans(Tween.TRANS_SINE)
 	_attack_tween.tween_property(visual, "position", _base_pos + Vector3(0, 0, thrust), thrust_time)
 	_attack_tween.tween_property(visual, "position", _base_pos, 0.2)
+
+
+## Glow while casting: cyan for the player, orange for enemies (a warning before their telegraph appears).
+func _on_cast_started(_slot: int, _duration: float) -> void:
+	_kill(_hit_tween)
+	_overlay.albedo_color = Color(0.4, 0.9, 1.0, 0.4) if _entity.is_in_group("player") else Color(1.0, 0.55, 0.2, 0.5)
+
+
+func _on_request_failed(_slot: int, reason: String) -> void:
+	if _entity.is_in_group("player"):
+		FloatingText.spawn(get_tree().current_scene, _entity.global_position + Vector3.UP * floater_height,
+				tr(reason), Color(0.75, 0.75, 0.85))
+
+
+func _on_cast_ended(_slot: int) -> void:
+	_overlay.albedo_color.a = 0.0
 
 
 func _on_attack_cancelled() -> void:

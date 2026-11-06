@@ -7,6 +7,9 @@ extends RefCounted
 ##              fraction that gets through = 1 - ef / (ef + ARMOUR_CONSTANT)
 ## 3) DR:        fraction that gets through = 1 - clamp(DR, 0, MAX_DR)   (separate layer, after armour)
 ## 4) Final:     max(1, round(base_damage * armour * DR))  if it hits
+##
+## Abilities can be ENERGY (physical = false: ignores armour, DR still applies) and can be
+## unavoidable (can_miss = false: no hit roll, e.g. area effects the player dodges by moving).
 
 const ARMOUR_CONSTANT: float = 100.0
 const MIN_HIT_CHANCE: float = 0.05
@@ -35,15 +38,19 @@ static func dr_multiplier(damage_reduction: float) -> float:
 static func resolve_attack(
 		accuracy: float, damage_min: float, damage_max: float, armour_penetration: float,
 		evasion: float, armour: float, damage_reduction: float,
-		rng: RandomNumberGenerator) -> AttackResult:
+		rng: RandomNumberGenerator, physical: bool = true, can_miss: bool = true) -> AttackResult:
 	var result: AttackResult = AttackResult.new()
-	result.hit_chance = hit_chance(accuracy, evasion)
-	result.hit_roll = rng.randf()
-	result.hit = result.hit_roll < result.hit_chance
+	if can_miss:
+		result.hit_chance = hit_chance(accuracy, evasion)
+		result.hit_roll = rng.randf()
+		result.hit = result.hit_roll < result.hit_chance
+	else:
+		result.hit_chance = 1.0
+		result.hit = true
 	if not result.hit:
 		return result
 	result.raw_damage = rng.randf_range(minf(damage_min, damage_max), maxf(damage_min, damage_max))
-	result.armour_multiplier = armour_multiplier(armour, armour_penetration)
+	result.armour_multiplier = armour_multiplier(armour, armour_penetration) if physical else 1.0
 	result.dr_multiplier = dr_multiplier(damage_reduction)
 	result.final_damage = maxi(1, roundi(result.raw_damage * result.armour_multiplier * result.dr_multiplier))
 	return result

@@ -8,6 +8,7 @@ extends Node
 signal queue_changed
 
 const POTION_TOKEN: String = "potion"
+const MANA_POTION_TOKEN: String = "mana_potion"
 const SWAP_TOKEN: String = "swap"
 const ABILITY_PREFIX: String = "ability:"
 
@@ -31,12 +32,15 @@ var _health: HealthComponent
 var _stats: StatsComponent
 var _abilities: AbilityController
 var _consumables: ConsumableController
+var _mana_potions: ConsumableController
+var _mana: ManaComponent
 var _equipment: EquipmentComponent
 var _primary_down: bool = false
 var _primary_just_pressed: bool = false
 var _hold_move_active: bool = false
 var _repeat_timer: float = 0.0
 var _queue: Array[String] = []
+var _queued_points: Dictionary = {}
 var _was_paused: bool = false
 
 
@@ -50,6 +54,8 @@ func _ready() -> void:
 	_abilities = entity.get_node("AbilityController") as AbilityController
 	_consumables = entity.get_node("ConsumableController") as ConsumableController
 	_equipment = entity.get_node("EquipmentComponent") as EquipmentComponent
+	_mana_potions = entity.get_node("ManaPotionController") as ConsumableController
+	_mana = entity.get_node("ManaComponent") as ManaComponent
 	_combat.set_weapon(_equipment.get_active_weapon())
 	movement.set_move_speed(_stats.get_move_speed())
 	targeting.target_lost.connect(_on_target_lost)
@@ -76,6 +82,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		request_action(SWAP_TOKEN)
 	elif InputMap.has_action(&"use_potion") and event.is_action_pressed("use_potion"):
 		request_action(POTION_TOKEN)
+	elif InputMap.has_action(&"use_mana_potion") and event.is_action_pressed("use_mana_potion"):
+		request_action(MANA_POTION_TOKEN)
 	else:
 		for i in AbilityController.MAX_SLOTS:
 			if event.is_action_pressed("skill_%d" % (i + 1)):
@@ -151,15 +159,18 @@ func _cancel_orders() -> void:
 
 
 ## Public: used by key presses and HUD buttons. `token` is "potion", "swap" or "ability:<slot>".
+## The aim point of an ability (cursor ground point / target) is captured NOW, also when queued.
 func request_action(token: String) -> void:
 	if _health.is_dead:
 		return
+	var point: Vector3 = _compute_aim(token)
 	if get_tree().paused and queue_actions_while_paused:
-		if not _queue.has(token) and _is_action_ready(token):
+		if not _queue.has(token) and _is_action_ready(token, point):
 			_queue.append(token)
+			_queued_points[token] = point
 			queue_changed.emit()
 	else:
-		_execute(token)
+		_execute(token, point)
 
 
 func is_queued(token: String) -> bool:
@@ -169,34 +180,79 @@ func is_queued(token: String) -> bool:
 func clear_queue() -> void:
 	if not _queue.is_empty():
 		_queue.clear()
+		_queued_points.clear()
 		queue_changed.emit()
 
 
 func _flush_queue() -> void:
 	var pending: Array[String] = _queue.duplicate()
+	var points: Dictionary = _queued_points.duplicate()
 	_queue.clear()
+	_queued_points.clear()
 	queue_changed.emit()
 	for token in pending:
-		_execute(token)
+		_execute(token, points.get(token, Vector3.INF))
 
 
-func _is_action_ready(token: String) -> bool:
+func _is_action_ready(token: String, point: Vector3) -> bool:
 	if token == POTION_TOKEN:
 		return _consumables.can_use()
+	if token == MANA_POTION_TOKEN:
+		return _mana_potions.can_use()
 	if token == SWAP_TOKEN:
 		return _equipment.can_swap()
 	if token.begins_with(ABILITY_PREFIX):
-		return _abilities.can_activate(int(token.trim_prefix(ABILITY_PREFIX)))
+		var slot: int = int(token.trim_prefix(ABILITY_PREFIX))
+		var ability: AbilityData = _abilities.get_ability(slot)
+		if ability == null or not _abilities.can_activate(slot):
+			return false
+		return ability.targeting == AbilityData.Targeting.SELF or point != Vector3.INF
 	return false
 
 
-func _execute(token: String) -> void:
+func _execute(token: String, point: Vector3) -> void:
 	if token == POTION_TOKEN:
 		_consumables.use()
+	elif token == MANA_POTION_TOKEN:
+		_mana_potions.use()
 	elif token == SWAP_TOKEN:
 		_equipment.request_swap()
 	elif token.begins_with(ABILITY_PREFIX):
-		_abilities.activate(int(token.trim_prefix(ABILITY_PREFIX)))
+		_abilities.request_cast(int(token.trim_prefix(ABILITY_PREFIX)), point, true)
+
+
+## World point an ability should be aimed at, or Vector3.INF if there is none.
+## GROUND: the ground under the cursor (falls back to the selected target).
+## TARGET: the selected target, else the hovered one.
+## While the cursor is over a HUD button (button click) the cursor is ignored.
+func _compute_aim(token: String) -> Vector3:
+	if not token.begins_with(ABILITY_PREFIX):
+		return Vector3.INF
+	var ability: AbilityData = _abilities.get_ability(int(token.trim_prefix(ABILITY_PREFIX)))
+	if ability == null:
+		return Vector3.INF
+	var entity: Node3D = get_parent() as Node3D
+	if ability.targeting == AbilityData.Targeting.SELF:
+		return entity.global_position
+	var selected: Vector3 = Vector3.INF
+	if is_instance_valid(targeting.current_target):
+		selected = targeting.current_target.entity.global_position
+	var from_cursor: Vector3 = Vector3.INF
+	var hovered_target: Vector3 = Vector3.INF
+	if get_viewport().gui_get_hovered_control() == null:
+		var pick: TargetingController.PickResult = targeting.pick_at(get_viewport().get_mouse_position())
+		if pick.kind == TargetingController.PickKind.GROUND:
+			from_cursor = pick.position
+		elif pick.kind == TargetingController.PickKind.TARGET:
+			hovered_target = pick.targetable.entity.global_position
+	if ability.targeting == AbilityData.Targeting.TARGET:
+		return selected if selected != Vector3.INF else hovered_target
+	# GROUND
+	if from_cursor != Vector3.INF:
+		return from_cursor
+	if hovered_target != Vector3.INF:
+		return hovered_target
+	return selected
 
 
 # ---------------------------------------------------------------- events
@@ -246,8 +302,8 @@ func get_debug_text() -> String:
 	var next_bp: float = SpeedCalculator.next_threshold(as_bonus, weapon.speed_thresholds, weapon.speed_rates)
 	var cs_bonus: float = _abilities.get_cast_speed_bonus()
 	var cs_next: float = SpeedCalculator.next_threshold(cs_bonus, SpeedCalculator.cast_thresholds(), SpeedCalculator.cast_rates())
-	var text: String = "HP: %d/%d | Set %s: %s (%s, range %.1f m, %.0f-%.0f dmg, LoS: %s)%s\n" % [
-		_health.current_health, _health.max_health,
+	var text: String = "HP: %d/%d | Mana: %d/%d | Set %s: %s (%s, range %.1f m, %.0f-%.0f dmg, LoS: %s)%s\n" % [
+		_health.current_health, _health.max_health, int(_mana.current_mana), int(_mana.max_mana),
 		"I" if _equipment.active_set == 0 else "II", weapon.display_name,
 		WeaponData.Family.keys()[weapon.family], weapon.attack_range, weapon.damage_min, weapon.damage_max,
 		str(weapon.requires_line_of_sight), "  [SWAPPING]" if _equipment.swapping else ""]

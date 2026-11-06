@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"resonance_burst"
+display_name = "Burst"
+description = "INSTANT area: an energy burst at the cursor. Cannot be evaded, ignores armour."
+kind = 0
+targeting = 2
+effect = 2
+cast_time = 0.0
+cooldown = 0.5
+mana_cost = 12.0
+cast_range = 8.0
+requires_line_of_sight = true
+area_radius = 2.2
+area_wind_up = 0.0
+area_duration = 0.0
+damage_min = 14.0
+damage_max = 20.0
+damage_physical = false
+can_miss = false
+area_colour = Color(0.3, 0.8, 1, 1)

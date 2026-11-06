@@ -1,7 +1,7 @@
 class_name DebugTools
 extends Node
 ## Debug-only shortcuts (removed from release builds):
-##   K kill target | R restart | G refill potions | U upgrade potion
+##   K kill target | R restart | G refill potions + mana | U upgrade potion
 ##   PageUp/PageDown: Attack Speed +/-5% | Home/End: Cast Speed +/-5% | Backspace: reset AS/CS
 ##   B / N: cycle the weapon in Set I / Set II (Test Maul -> Test Blade -> Test Rifle)
 
@@ -29,13 +29,18 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				if health != null:
 					health.kill()
 		KEY_G:
-			var consumables: ConsumableController = _player_node("ConsumableController") as ConsumableController
-			if consumables != null:
-				consumables.refill()
+			for potion_node in ["ConsumableController", "ManaPotionController"]:
+				var consumables: ConsumableController = _player_node(potion_node) as ConsumableController
+				if consumables != null:
+					consumables.refill()
+			var mana: ManaComponent = _player_node("ManaComponent") as ManaComponent
+			if mana != null:
+				mana.restore(mana.max_mana)
 		KEY_U:
-			var consumables_up: ConsumableController = _player_node("ConsumableController") as ConsumableController
-			if consumables_up != null:
-				consumables_up.upgrade()
+			for potion_node in ["ConsumableController", "ManaPotionController"]:
+				var consumables_up: ConsumableController = _player_node(potion_node) as ConsumableController
+				if consumables_up != null:
+					consumables_up.upgrade()
 		KEY_PAGEUP:
 			_adjust_speed(5.0, 0.0)
 		KEY_PAGEDOWN:

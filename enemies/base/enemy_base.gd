@@ -5,10 +5,14 @@ extends CharacterBody3D
 
 @export var stats: StatBlock
 @export var weapon: WeaponData
+## Optional special attack (slot 0 of the AbilityController), used by EnemyAI.
+@export var ability: AbilityData
 ## false = dummy: it can be hit but does not attack or chase.
 @export var aggressive: bool = true
 ## Chance to drop a potion charge on death. Placeholder: Phase 7 replaces it with loot tables.
 @export_range(0.0, 1.0) var potion_drop_chance: float = 0.3
+## Share of potion drops that are MANA potions (the rest are health potions).
+@export_range(0.0, 1.0) var mana_drop_share: float = 0.4
 
 @onready var _targetable: Targetable = $Targetable
 @onready var _health: HealthComponent = $HealthComponent
@@ -32,7 +36,8 @@ func _ready() -> void:
 func _on_died(_result: AttackResult) -> void:
 	_targetable.invalidate()
 	if randf() < potion_drop_chance:
-		PotionPickup.spawn(get_tree().current_scene, global_position)
+		var kind: ConsumableData.Kind = ConsumableData.Kind.MANA if randf() < mana_drop_share else ConsumableData.Kind.HEALTH
+		PotionPickup.spawn(get_tree().current_scene, global_position, 1, kind)
 	collision_layer = 0
 	_agent.avoidance_enabled = false
 	_movement.stop()

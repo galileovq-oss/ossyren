@@ -6,6 +6,8 @@
 script = ExtResource("1_sb")
 display_name = "Player"
 max_health = 150
+max_mana = 100
+mana_regen = 1.5
 accuracy = 100.0
 evasion = 15.0
 armour = 20.0

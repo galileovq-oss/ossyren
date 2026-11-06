@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" path="res://player/Player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://enemies/base/EnemyBase.tscn" id="4_enemy"]
 [ext_resource type="Resource" path="res://data/enemies/dummy_stats.tres" id="7_dummy"]
+[ext_resource type="Resource" path="res://data/enemies/brute_stats.tres" id="12_brute"]
+[ext_resource type="Resource" path="res://data/abilities/brute_slam.tres" id="13_slam"]
 [ext_resource type="Resource" path="res://data/enemies/dummy_armoured_stats.tres" id="8_armoured"]
 [ext_resource type="Resource" path="res://data/enemies/dummy_evasive_stats.tres" id="9_evasive"]
 [ext_resource type="Script" path="res://world/level_navigation.gd" id="5_level"]
@@ -176,6 +178,30 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 1)
 
 [node name="GruntPackC" parent="Enemies" instance=ExtResource("4_enemy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 2)
+
+[node name="DummyClusterA" parent="Enemies" instance=ExtResource("4_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+stats = ExtResource("7_dummy")
+aggressive = false
+potion_drop_chance = 0.0
+
+[node name="DummyClusterB" parent="Enemies" instance=ExtResource("4_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0, 0.7)
+stats = ExtResource("7_dummy")
+aggressive = false
+potion_drop_chance = 0.0
+
+[node name="DummyClusterC" parent="Enemies" instance=ExtResource("4_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0, 1.4)
+stats = ExtResource("7_dummy")
+aggressive = false
+potion_drop_chance = 0.0
+
+[node name="BruteSolo" parent="Enemies" instance=ExtResource("4_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -6)
+stats = ExtResource("12_brute")
+ability = ExtResource("13_slam")
+potion_drop_chance = 0.6
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)

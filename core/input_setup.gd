@@ -6,6 +6,7 @@ extends RefCounted
 
 static func ensure() -> void:
 	_ensure_key(&"use_potion", KEY_F)
+	_ensure_key(&"use_mana_potion", KEY_V)
 
 
 static func _ensure_key(action: StringName, keycode: Key) -> void:

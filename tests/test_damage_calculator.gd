@@ -41,6 +41,17 @@ func _initialize() -> void:
 			misses += 1
 	_check("misses still happen with evasion 0 (~5%)", misses > 0 and absf(float(misses) / 20000.0 - 0.05) < 0.01)
 
+	# Energy damage ignores armour: 10 * 1.0 (no armour) * 0.8 (DR 20%) = 8
+	var energy: AttackResult = DamageCalculator.resolve_attack(
+		1000.0, 10.0, 10.0, 0.0, 0.0, 100.0, 0.2, rng, false, false)
+	_check("energy ignores armour (damage 8)", energy.hit and energy.final_damage == 8)
+	# Unavoidable abilities never miss, even against huge evasion
+	var never_missed: bool = true
+	for i in 2000:
+		if not DamageCalculator.resolve_attack(1.0, 5.0, 5.0, 0.0, 10000.0, 0.0, 0.0, rng, true, false).hit:
+			never_missed = false
+	_check("can_miss = false never misses", never_missed)
+
 	print("\n%s (%d failure(s))" % ["OK" if _failures == 0 else "FAILED", _failures])
 	quit(1 if _failures > 0 else 0)
 

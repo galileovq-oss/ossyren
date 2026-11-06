@@ -9,6 +9,7 @@ const STAT_ARMOUR: StringName = &"armour"
 const STAT_DAMAGE_REDUCTION: StringName = &"damage_reduction"
 const STAT_ATTACK_SPEED: StringName = &"attack_speed"
 const STAT_CAST_SPEED: StringName = &"cast_speed"
+const STAT_MANA_REGEN: StringName = &"mana_regen"
 
 @export var base: StatBlock
 
@@ -83,6 +84,15 @@ func get_attack_speed() -> float:
 ## Cast Speed bonus in % (additive).
 func get_cast_speed() -> float:
 	return _bonus(STAT_CAST_SPEED)
+
+
+func get_max_mana() -> int:
+	return base.max_mana
+
+
+## Mana per second (base + additive bonuses).
+func get_mana_regen() -> float:
+	return base.mana_regen + _bonus(STAT_MANA_REGEN)
 
 
 func get_body_radius() -> float:

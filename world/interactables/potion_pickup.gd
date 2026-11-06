@@ -4,6 +4,7 @@ extends Node3D
 ## Placeholder visual. Real loot rules (rates, chests, tables) arrive in Phase 7.
 
 @export var charges: int = 1
+@export var kind: ConsumableData.Kind = ConsumableData.Kind.HEALTH
 @export var pickup_radius: float = 1.6
 
 var _player: Node3D
@@ -12,21 +13,24 @@ var _mesh: MeshInstance3D
 var _time: float = 0.0
 
 
-static func spawn(parent: Node, world_pos: Vector3, amount: int = 1) -> void:
+static func spawn(parent: Node, world_pos: Vector3, amount: int = 1,
+		potion_kind: ConsumableData.Kind = ConsumableData.Kind.HEALTH) -> void:
 	var pickup: PotionPickup = PotionPickup.new()
 	pickup.charges = amount
+	pickup.kind = potion_kind
 	parent.add_child(pickup)
 	pickup.global_position = world_pos
 
 
 func _ready() -> void:
+	var colour: Color = Color(0.3, 1.0, 0.5) if kind == ConsumableData.Kind.HEALTH else Color(0.35, 0.55, 1.0)
 	var sphere: SphereMesh = SphereMesh.new()
 	sphere.radius = 0.2
 	sphere.height = 0.4
 	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.albedo_color = Color(0.3, 1.0, 0.5)
+	mat.albedo_color = colour
 	mat.emission_enabled = true
-	mat.emission = Color(0.3, 1.0, 0.5)
+	mat.emission = colour
 	mat.emission_energy_multiplier = 2.0
 	_mesh = MeshInstance3D.new()
 	_mesh.mesh = sphere
@@ -35,7 +39,7 @@ func _ready() -> void:
 	_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_mesh)
 	var light: OmniLight3D = OmniLight3D.new()
-	light.light_color = Color(0.3, 1.0, 0.5)
+	light.light_color = colour
 	light.omni_range = 2.5
 	light.light_energy = 1.2
 	light.position = Vector3(0, 0.6, 0)
@@ -52,7 +56,8 @@ func _physics_process(_delta: float) -> void:
 		_player = get_tree().get_first_node_in_group("player") as Node3D
 		if _player == null:
 			return
-		_consumables = _player.get_node_or_null("ConsumableController") as ConsumableController
+		var node_name: String = "ConsumableController" if kind == ConsumableData.Kind.HEALTH else "ManaPotionController"
+		_consumables = _player.get_node_or_null(node_name) as ConsumableController
 	if _consumables == null or _consumables.is_full():
 		return
 	var flat: Vector3 = _player.global_position - global_position
@@ -62,6 +67,6 @@ func _physics_process(_delta: float) -> void:
 	var added: int = _consumables.add_charges(charges)
 	if added > 0:
 		FloatingText.spawn(get_tree().current_scene, global_position + Vector3.UP * 1.2,
-				tr("+%d Potion") % added, Color(0.4, 1.0, 0.6))
+				tr("+%d Potion") % added, Color(0.4, 1.0, 0.6) if kind == ConsumableData.Kind.HEALTH else Color(0.5, 0.7, 1.0))
 		CombatLog.add("Picked up %d potion charge(s)" % added)
 		queue_free()

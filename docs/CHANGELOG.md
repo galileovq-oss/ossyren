@@ -1,5 +1,21 @@
 # Changelog / registro de decisiones
 
+## 2026-11-02 — Decisiones de Fase 5
+- Apuntado de AoE: cursor directo (confirmado). AoE no se esquivan con Evasion (confirmado).
+- **Recurso de habilidades: mana clásico** (nombre de trabajo) + **cooldowns cortos** estilo Diablo 2 (0,5–3 s); odiamos los cooldowns largos.
+- `ManaComponent` (100 máx., regen 1,5/s); `AbilityData.mana_cost` (se gasta al resolver; un cast interrumpido es gratis); `StatBlock.max_mana/mana_regen`; `request_failed` con avisos flotantes ("Not enough mana", "Out of range", "No target").
+- Pociones de mana: `ConsumableData.kind` (HEALTH/MANA), mismo modelo que las de vida (5 cargas, drops, hub, mejoras Estus). `PotionPickup` y `EnemyBase.mana_drop_share`. Tecla V.
+- Renombres: `heal_amount` -> `restore_amount`, `heal_per_upgrade` -> `restore_per_upgrade`.
+
+## 2026-11-02 — Fase 5
+- `AbilityData` ampliado: targeting (self/target/ground), alcance, LoS, efecto AREA con wind-up propio, duración y ticks, tipo de daño (físico/energía) y `can_miss`.
+- `AreaEffect`: zona circular con telegraph; cubre AoE instantáneo, con wind-up y persistente. Se registra en el grupo `area_effects`.
+- `AbilityController.request_cast`: apunta con cursor, camina hasta alcance/LoS antes de lanzar (reusa `MovementController.chase` con un ancla), cast quieto, cancelable por cualquier orden. Las acciones encoladas en pausa guardan el punto apuntado.
+- Habilidades del jugador: Brace, Burst (instantáneo), Collapse (wind-up ≈ 1,9 s en total), Static Field (persistente). Se retira Channelled Brace.
+- Enemigo **Brute** con Slam telegráfico (usa la misma maquinaria que el jugador). Regla Auto de Brace: también se activa ante una zona hostil que va a impactar.
+- `DamageCalculator.resolve_attack` acepta `physical` y `can_miss`; pruebas ampliadas.
+- Decidido por defecto: AoE no se esquivan con Evasion (se esquivan moviéndose). Pendiente de confirmar.
+
 ## 2026-11-02 — Decisiones de Fase 4
 - Casteo: el personaje se queda quieto y cualquier orden lo interrumpe (confirmado).
 - Cambio de set de armas: cooldown de 1,5 s **solo si ocurre en combate** (`EquipmentComponent.combat_swap_cooldown`; "en combate" = objetivo engranado o hasta 4 s tras dar/recibir un ataque, `CombatController.combat_linger`).

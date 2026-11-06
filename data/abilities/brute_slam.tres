@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"brute_slam"
+display_name = "Slam"
+description = "ENEMY telegraphed attack: the Brute winds up (0.5 s), then marks the ground where you stood for 1.0 s before smashing it. Move out of the red zone."
+kind = 0
+targeting = 2
+effect = 2
+cast_time = 0.5
+cooldown = 6.0
+cast_range = 3.5
+requires_line_of_sight = false
+area_radius = 2.2
+area_wind_up = 1.0
+area_duration = 0.0
+damage_min = 28.0
+damage_max = 36.0
+armour_penetration = 0.0
+damage_physical = true
+can_miss = false
+area_colour = Color(1, 0.25, 0.15, 1)

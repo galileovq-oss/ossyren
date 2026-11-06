@@ -12,6 +12,7 @@ var _entity: Node3D
 var _movement: MovementController
 var _combat: CombatController
 var _health: HealthComponent
+var _abilities: AbilityController
 var _player: Node3D
 var _aggro: bool = false
 var _timer: float = 0.0
@@ -22,6 +23,7 @@ func _ready() -> void:
 	_movement = _entity.get_node("MovementController") as MovementController
 	_combat = _entity.get_node("CombatController") as CombatController
 	_health = _entity.get_node("HealthComponent") as HealthComponent
+	_abilities = _entity.get_node_or_null("AbilityController") as AbilityController
 	var aggressive: Variant = _entity.get("aggressive")
 	enabled = true if aggressive == null else bool(aggressive)
 	_health.attack_received.connect(_on_attack_received)
@@ -48,11 +50,24 @@ func _physics_process(delta: float) -> void:
 			_aggro = true
 			_engage()
 		return
+	_try_ability()
 	_timer -= delta
 	if _timer <= 0.0:
 		_timer = reengage_interval
 		if _movement.state == MovementController.State.IDLE:
 			_engage()
+
+
+## Slot 0 is the enemy's special attack: cast at the player's current position when it is within range.
+## The zone only appears after the cast, at that point, so the player has time to move out.
+func _try_ability() -> void:
+	if _abilities == null or not _abilities.can_activate(0):
+		return
+	var ability: AbilityData = _abilities.get_ability(0)
+	var flat: Vector3 = _player.global_position - _entity.global_position
+	flat.y = 0.0
+	if flat.length() <= ability.cast_range:
+		_abilities.request_cast(0, _player.global_position, false)
 
 
 func _engage() -> void:

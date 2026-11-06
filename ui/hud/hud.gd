@@ -3,6 +3,7 @@ extends CanvasLayer
 ## Runs in PROCESS_MODE_ALWAYS so it stays interactive during the tactical pause.
 
 const COLOUR_HP: Color = Color(0.72, 0.16, 0.16)
+const COLOUR_MANA: Color = Color(0.2, 0.4, 0.9)
 const COLOUR_TARGET: Color = Color(0.8, 0.45, 0.2)
 
 var _pc: PlayerController
@@ -10,10 +11,14 @@ var _health: HealthComponent
 var _abilities: AbilityController
 var _consumables: ConsumableController
 var _equipment: EquipmentComponent
+var _mana: ManaComponent
+var _mana_potions: ConsumableController
 var _targeting: TargetingController
 
 var _hp_label: Label
 var _hp_bar: ProgressBar
+var _mana_label: Label
+var _mana_bar: ProgressBar
 var _target_box: PanelContainer
 var _target_label: Label
 var _target_bar: ProgressBar
@@ -22,6 +27,7 @@ var _dim: ColorRect
 var _slot_buttons: Array[Button] = []
 var _mode_buttons: Array[Button] = []
 var _potion_button: Button
+var _mana_potion_button: Button
 var _weapon_button: Button
 
 
@@ -37,6 +43,8 @@ func _ready() -> void:
 	_abilities = player.get_node("AbilityController") as AbilityController
 	_consumables = player.get_node("ConsumableController") as ConsumableController
 	_equipment = player.get_node("EquipmentComponent") as EquipmentComponent
+	_mana = player.get_node("ManaComponent") as ManaComponent
+	_mana_potions = player.get_node("ManaPotionController") as ConsumableController
 	_targeting = player.get_node("TargetingController") as TargetingController
 	_build()
 
@@ -73,6 +81,13 @@ func _build() -> void:
 	_hp_bar.add_theme_stylebox_override("fill", _flat(COLOUR_HP))
 	player_box.add_child(_hp_label)
 	player_box.add_child(_hp_bar)
+	_mana_label = Label.new()
+	_mana_bar = ProgressBar.new()
+	_mana_bar.show_percentage = false
+	_mana_bar.custom_minimum_size = Vector2(280, 16)
+	_mana_bar.add_theme_stylebox_override("fill", _flat(COLOUR_MANA))
+	player_box.add_child(_mana_label)
+	player_box.add_child(_mana_bar)
 	root.add_child(player_box)
 
 	# Action bar: bottom-centre (potion + 4 ability slots)
@@ -95,6 +110,14 @@ func _build() -> void:
 	spacer.custom_minimum_size = Vector2(0, 22)
 	potion_col.add_child(spacer)
 	bar.add_child(potion_col)
+	_mana_potion_button = _make_button(Vector2(104, 64))
+	_mana_potion_button.pressed.connect(_pc.request_action.bind(PlayerController.MANA_POTION_TOKEN))
+	var mana_potion_col: VBoxContainer = VBoxContainer.new()
+	mana_potion_col.add_child(_mana_potion_button)
+	var mana_spacer: Control = Control.new()
+	mana_spacer.custom_minimum_size = Vector2(0, 22)
+	mana_potion_col.add_child(mana_spacer)
+	bar.add_child(mana_potion_col)
 	for i in AbilityController.MAX_SLOTS:
 		var col: VBoxContainer = VBoxContainer.new()
 		var slot: Button = _make_button(Vector2(104, 64))
@@ -180,6 +203,9 @@ func _refresh_player() -> void:
 	_hp_label.text = text
 	_hp_bar.max_value = _health.max_health
 	_hp_bar.value = _health.current_health
+	_mana_label.text = "%s  %d / %d" % [tr("Mana"), int(_mana.current_mana), int(_mana.max_mana)]
+	_mana_bar.max_value = _mana.max_mana
+	_mana_bar.value = _mana.current_mana
 
 
 func _refresh_target() -> void:
@@ -211,19 +237,11 @@ func _refresh_slots() -> void:
 	_weapon_button.text = "[%s] %s %s\n%s" % [_key_text(&"weapon_set_swap"),
 			tr("Set I") if _equipment.active_set == 0 else tr("Set II"),
 			active_weapon.display_name if active_weapon != null else "-", weapon_state]
-	# Potion
-	var potion: ConsumableData = _consumables.potion
-	if potion != null:
-		var status: String = tr("Ready")
-		if _consumables.charges <= 0:
-			status = tr("Empty")
-		elif _consumables.get_cooldown_left() > 0.0:
-			status = "%.1fs" % _consumables.get_cooldown_left()
-		elif _health.current_health >= _health.max_health:
-			status = tr("Full health")
-		if _pc.is_queued(PlayerController.POTION_TOKEN):
-			status = tr("Queued")
-		_potion_button.text = "[%s] %s %d/%d\n%s (+%d)" % [_key_text(&"use_potion"), potion.display_name, _consumables.charges, _consumables.get_max_charges(), status, _consumables.get_heal_amount()]
+	# Potions
+	_refresh_potion(_potion_button, _consumables, &"use_potion", _health.current_health >= _health.max_health,
+			PlayerController.POTION_TOKEN, tr("Full health"))
+	_refresh_potion(_mana_potion_button, _mana_potions, &"use_mana_potion", _mana.current_mana >= _mana.max_mana,
+			PlayerController.MANA_POTION_TOKEN, tr("Full mana"))
 	# Ability slots
 	for i in AbilityController.MAX_SLOTS:
 		var button: Button = _slot_buttons[i]
@@ -240,12 +258,35 @@ func _refresh_slots() -> void:
 		var state: String = tr("Ready") if cooldown <= 0.0 else "%.1fs" % cooldown
 		if _abilities.casting_slot == i:
 			state = "%s %.1fs" % [tr("Casting"), _abilities.get_cast_left()]
+		if _abilities.pending_slot == i:
+			state = tr("Moving...")
 		if _pc.is_queued("%s%d" % [PlayerController.ABILITY_PREFIX, i]):
 			state = tr("Queued")
-		button.text = "[%s] %s\n%s" % [key, ability.display_name, state]
+		if cooldown <= 0.0 and _abilities.casting_slot != i and ability.mana_cost > _mana.current_mana:
+			state = tr("No mana")
+		var cost_text: String = " (%d)" % int(ability.mana_cost) if ability.mana_cost > 0.0 else ""
+		button.text = "[%s] %s%s\n%s" % [key, ability.display_name, cost_text, state]
 		button.disabled = false
 		mode_button.disabled = not ability.supports_auto
 		mode_button.text = tr("Auto") if _abilities.get_mode(i) == AbilityData.Mode.AUTO else tr("Manual")
+
+
+func _refresh_potion(button: Button, controller: ConsumableController, action: StringName,
+		resource_full: bool, token: String, full_text: String) -> void:
+	var potion: ConsumableData = controller.potion
+	if potion == null:
+		return
+	var status: String = tr("Ready")
+	if controller.charges <= 0:
+		status = tr("Empty")
+	elif controller.get_cooldown_left() > 0.0:
+		status = "%.1fs" % controller.get_cooldown_left()
+	elif resource_full:
+		status = full_text
+	if _pc.is_queued(token):
+		status = tr("Queued")
+	button.text = "[%s] %s %d/%d\n%s (+%d)" % [_key_text(action), potion.display_name, controller.charges,
+			controller.get_max_charges(), status, controller.get_restore_amount()]
 
 
 func _refresh_banner() -> void:

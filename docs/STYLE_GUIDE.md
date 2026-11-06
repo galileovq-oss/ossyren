@@ -20,7 +20,8 @@ Dry, understated, gallows humour. Survivors who have seen far too much and still
 | Armour / penetration | Armour / Armour Penetration |
 | Damage Reduction | Damage Reduction (DR) |
 | Temporary absorb | Barrier |
-| Potion (placeholder name) | Health Potion |
+| Potion (placeholder names) | Health Potion / Mana Potion |
+| Ability resource | Mana (working name; final name TBD) |
 
 ## Working language (decided)
 - Code and code comments: **English**.

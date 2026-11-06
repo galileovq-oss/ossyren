@@ -6,8 +6,9 @@
 script = ExtResource("1_cd")
 id = &"health_potion"
 display_name = "Health Potion"
-heal_amount = 50
-heal_per_upgrade = 10
+kind = 0
+restore_amount = 50
+restore_per_upgrade = 10
 max_upgrade_level = 5
 cooldown = 8.0
 max_charges = 5

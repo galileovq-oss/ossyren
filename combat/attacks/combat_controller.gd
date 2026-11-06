@@ -87,6 +87,11 @@ func is_in_combat() -> bool:
 	return is_instance_valid(target) or _combat_time_left > 0.0
 
 
+## Keeps the "in combat" window open (called by abilities / area effects of this entity).
+func refresh_combat() -> void:
+	_combat_time_left = combat_linger
+
+
 func _on_own_attack_received(_result: AttackResult) -> void:
 	_combat_time_left = combat_linger
 

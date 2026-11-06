@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="Script" path="res://core/movement_controller.gd" id="1_move"]
 [ext_resource type="Script" path="res://combat/targeting/targeting_controller.gd" id="2_target"]
@@ -19,7 +19,11 @@
 [ext_resource type="Resource" path="res://data/items/health_potion.tres" id="17_potion"]
 [ext_resource type="Resource" path="res://data/weapons/blade_test.tres" id="18_blade"]
 [ext_resource type="Script" path="res://player/components/equipment_component.gd" id="19_eq"]
-[ext_resource type="Resource" path="res://data/abilities/channelled_brace.tres" id="20_cbrace"]
+[ext_resource type="Script" path="res://combat/resources/mana_component.gd" id="23_mana"]
+[ext_resource type="Resource" path="res://data/items/mana_potion.tres" id="24_mpotion"]
+[ext_resource type="Resource" path="res://data/abilities/resonance_burst.tres" id="20_burst"]
+[ext_resource type="Resource" path="res://data/abilities/collapse.tres" id="21_collapse"]
+[ext_resource type="Resource" path="res://data/abilities/static_field.tres" id="22_field"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -78,9 +82,12 @@ base = ExtResource("11_pstats")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("8_health")
 
+[node name="ManaComponent" type="Node" parent="."]
+script = ExtResource("23_mana")
+
 [node name="AbilityController" type="Node" parent="."]
 script = ExtResource("15_ac")
-abilities = Array[ExtResource("12_ad")]([ExtResource("13_brace"), ExtResource("20_cbrace")])
+abilities = Array[ExtResource("12_ad")]([ExtResource("13_brace"), ExtResource("20_burst"), ExtResource("21_collapse"), ExtResource("22_field")])
 passives = Array[ExtResource("12_ad")]([ExtResource("14_hardened")])
 
 [node name="ConsumableController" type="Node" parent="."]
@@ -99,6 +106,10 @@ script = ExtResource("9_combat")
 
 [node name="CombatFeedback" type="Node" parent="."]
 script = ExtResource("10_fb")
+
+[node name="ManaPotionController" type="Node" parent="."]
+script = ExtResource("16_cc")
+potion = ExtResource("24_mpotion")
 
 [node name="EquipmentComponent" type="Node" parent="."]
 script = ExtResource("19_eq")

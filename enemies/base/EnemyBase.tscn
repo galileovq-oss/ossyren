@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://enemies/base/enemy_base.gd" id="1_base"]
 [ext_resource type="Script" path="res://combat/targeting/targetable.gd" id="2_targetable"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://enemies/base/enemy_ai.gd" id="8_ai"]
 [ext_resource type="Resource" path="res://data/enemies/grunt_stats.tres" id="9_stats"]
 [ext_resource type="Resource" path="res://data/weapons/enemy_claws.tres" id="10_claws"]
+[ext_resource type="Script" path="res://combat/attacks/ability_controller.gd" id="11_ac"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enemy"]
 radius = 0.5
@@ -64,6 +65,9 @@ script = ExtResource("3_stats")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("4_health")
+
+[node name="AbilityController" type="Node" parent="."]
+script = ExtResource("11_ac")
 
 [node name="MovementController" type="Node" parent="." node_paths=PackedStringArray("agent")]
 script = ExtResource("5_move")

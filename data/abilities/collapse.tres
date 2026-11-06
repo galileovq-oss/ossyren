@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/attacks/ability_data.gd" id="1_ad"]
+
+[resource]
+script = ExtResource("1_ad")
+id = &"collapse"
+display_name = "Collapse"
+description = "WIND-UP area: a short cast, then the zone telegraphs for 1.4 s before a heavy energy hit (total preparation about 1.9 s)."
+kind = 0
+targeting = 2
+effect = 2
+cast_time = 0.5
+cooldown = 2.5
+mana_cost = 35.0
+cast_range = 9.0
+requires_line_of_sight = true
+area_radius = 3.0
+area_wind_up = 1.4
+area_duration = 0.0
+damage_min = 38.0
+damage_max = 52.0
+damage_physical = false
+can_miss = false
+area_colour = Color(0.55, 0.45, 1, 1)
